@@ -376,6 +376,32 @@ export class Timeline {
             '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
             '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB'
         ];
+
+        // 获取所有现有事件
+        const events = eventService.getAllEvents();
+        
+        // 获取上一个事件的颜色
+        let lastEventColor = null;
+        if (events.length > 0) {
+            lastEventColor = events[events.length - 1].color;
+        }
+        
+        // 选择一个不同的颜色
+        let selectedColorIndex = 0;
+        if (lastEventColor) {
+            // 找到不同于上一个事件的颜色
+            selectedColorIndex = savedColors.findIndex((color, index) => {
+                // 如果所有颜色都用完了，就回到第一个颜色
+                if (index === savedColors.length - 1 && color === lastEventColor) {
+                    return true;
+                }
+                return color !== lastEventColor;
+            });
+            // 如果找到的是最后一个颜色并且与上一个事件相同，就选择第一个颜色
+            if (selectedColorIndex === savedColors.length - 1 && savedColors[selectedColorIndex] === lastEventColor) {
+                selectedColorIndex = 0;
+            }
+        }
         
         dialog.innerHTML = `
             <h3>${title}</h3>
@@ -394,7 +420,9 @@ export class Timeline {
                 </div>
                 <div class="color-picker-grid">
                     ${savedColors.map((color, index) => `
-                        <div class="color-box" style="background-color: ${color}" data-color="${color}">
+                        <div class="color-box${index === selectedColorIndex ? ' selected' : ''}" 
+                             style="background-color: ${color}" 
+                             data-color="${color}">
                             <input type="color" value="${color}" />
                         </div>
                     `).join('')}
@@ -414,11 +442,8 @@ export class Timeline {
         const endTimeInput = dialog.querySelector('.end-time');
         nameInput.focus();
         
-        let selectedColor = savedColors[0];
+        let selectedColor = savedColors[selectedColorIndex];
         const colorBoxes = dialog.querySelectorAll('.color-box');
-        
-        // 设置第一个颜色为默认选中
-        colorBoxes[0].classList.add('selected');
         
         // 处理颜色选择
         colorBoxes.forEach((box, index) => {
