@@ -217,4 +217,21 @@ body.dark-mode {
 .dark-mode .event-item {
     background-color: #2d2d2d;
     color: #e0e0e0;
+}
+
+/* 时间提示框样式 */
+.time-tooltip {
+    position: fixed;
+    background-color: rgba(0, 123, 255, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+}
+
+.dark-mode .time-tooltip {
+    background-color: rgba(0, 123, 255, 0.9);
 } 

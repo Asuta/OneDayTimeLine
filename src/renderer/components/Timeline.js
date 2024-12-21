@@ -13,6 +13,7 @@ export class Timeline {
         this.initialize();
         this.bindEvents();
         this.initializeThemeToggle();
+        this.initializeTimeTooltip();
     }
 
     initialize() {
@@ -45,6 +46,43 @@ export class Timeline {
             document.body.classList.toggle('dark-mode');
             themeToggle.innerHTML = `<i>${this.isDarkMode ? '☀️' : '🌙'}</i>`;
             localStorage.setItem('darkMode', this.isDarkMode);
+        });
+    }
+
+    initializeTimeTooltip() {
+        // 创建时间提示框
+        const tooltip = document.createElement('div');
+        tooltip.className = 'time-tooltip';
+        document.body.appendChild(tooltip);
+        this.tooltip = tooltip;
+
+        // 监听时间轴区域的鼠标移动
+        this.content.addEventListener('mousemove', (e) => {
+            const timelineRect = this.content.getBoundingClientRect();
+            const scrollTop = this.container.scrollTop;
+            
+            // 计算鼠标相对于时间轴的位置
+            const relativeY = e.clientY - timelineRect.top + scrollTop;
+            const totalHeight = this.content.offsetHeight;
+            
+            // 计算时间
+            const hours = (relativeY / totalHeight) * 24;
+            const hoursFloor = Math.floor(hours);
+            const minutes = Math.floor((hours - hoursFloor) * 60);
+            
+            // 格式化时间
+            const timeString = `${hoursFloor.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            
+            // 更新提示框位置和内容
+            this.tooltip.style.display = 'block';
+            this.tooltip.style.left = `${e.clientX + 10}px`;
+            this.tooltip.style.top = `${e.clientY + 10}px`;
+            this.tooltip.textContent = timeString;
+        });
+
+        // 鼠标离开时间轴区域时隐藏提示框
+        this.content.addEventListener('mouseleave', () => {
+            this.tooltip.style.display = 'none';
         });
     }
 
