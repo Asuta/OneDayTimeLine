@@ -673,13 +673,13 @@ body.dark-mode {
     margin-left: 5px;
     font-size: 11px;
     opacity: 0.8;
-    color: #ff6b6b;
+    color: #ffffff;
 }
 
 .dark-mode .event-content .wasted-time {
-    color: #ff8787;
+    color: #ffffff;
 }
 
 .dark-mode .event {
-    background-image: linear-gradient(to top, rgba(64, 64, 64, 0.7) var(--wasted-percent, 0%), transparent var(--wasted-percent, 0%));
+    background-image: linear-gradient(to top, rgba(69, 69, 69, 0.3) var(--wasted-percent, 0%), transparent var(--wasted-percent, 0%));
 } 
