@@ -314,9 +314,17 @@ export class Timeline {
         
         // 确保点击在时间轴区域内
         if (e.clientX > timelineRect.right) {
+            // 清理之前可能存在的状态
+            if (this.tempEvent) {
+                this.tempEvent.remove();
+                this.tempEvent = null;
+            }
+            this.adjustedStartTime = null;
+            this.adjustedEndTime = null;
+            
             this.isDragging = true;
             
-            // 计算相对于时间轴的位置（与时间指示器相同的计算方法）
+            // 计算相对于时间轴的位置
             const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
             this.dragStartTime = relativePosition * 24;
             
@@ -326,7 +334,7 @@ export class Timeline {
             this.tempEvent.style.backgroundColor = 'rgba(0, 123, 255, 0.5)';
             this.tempEvent.style.border = '2px dashed #007bff';
             
-            // 设置初始位置（使用相对于时间轴的位置）
+            // 设置初始位置
             const startPercent = relativePosition * 100;
             this.tempEvent.style.top = `${startPercent}%`;
             this.tempEvent.style.height = '0';
@@ -532,7 +540,10 @@ export class Timeline {
         
         dialog.querySelector('.cancel').addEventListener('click', () => {
             document.body.removeChild(overlay);
-            callback(null);
+            this.isDragging = false;
+            this.adjustedStartTime = null;
+            this.adjustedEndTime = null;
+            if (callback) callback(null);
         });
         
         // 处理按键事件
@@ -548,7 +559,10 @@ export class Timeline {
                 }
             } else if (e.key === 'Escape') {
                 document.body.removeChild(overlay);
-                callback(null);
+                this.isDragging = false;
+                this.adjustedStartTime = null;
+                this.adjustedEndTime = null;
+                if (callback) callback(null);
             }
         });
     }
@@ -556,20 +570,29 @@ export class Timeline {
     handleDragEnd(e) {
         if (!this.isDragging || !this.tempEvent) return;
         
-        // 移除临时事件
-        this.tempEvent.remove();
-        this.tempEvent = null;
+        const wasDragging = this.isDragging;
+        
+        // 清理拖拽状态
         this.isDragging = false;
+        if (this.tempEvent) {
+            this.tempEvent.remove();
+            this.tempEvent = null;
+        }
+        
+        // 如果没有实际进行拖拽，直接返回
+        if (!wasDragging || !this.adjustedStartTime || !this.adjustedEndTime) {
+            this.adjustedStartTime = null;
+            this.adjustedEndTime = null;
+            return;
+        }
         
         // 使用调整后的时间字符串
         const formattedStartTime = this.adjustedStartTime;
         const formattedEndTime = this.adjustedEndTime;
         
-        // 如果没有有效的时间，不创建事件
-        if (!formattedStartTime || !formattedEndTime) {
-            console.log('无效的时间范围，不创建事件');
-            return;
-        }
+        // 清理时间记录
+        this.adjustedStartTime = null;
+        this.adjustedEndTime = null;
         
         // 使用自定义对话框，新建事件时不传入默认名称
         this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, dialogStartTime, dialogEndTime) => {
@@ -583,7 +606,6 @@ export class Timeline {
                 
                 try {
                     eventService.addEvent(event);
-                    this.renderEvents(); // 立即重新渲染事件
                 } catch (error) {
                     console.error('添加事件失败:', error);
                     alert(error.message);
