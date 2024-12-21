@@ -389,7 +389,7 @@ export class Timeline {
                     }
                 }
             }
-        }, event.name); // 传入默认名称
+        }, event.name, event.color); // 传入默认名称和默认颜色
     }
 
     bindEvents() {
@@ -508,7 +508,7 @@ export class Timeline {
     }
 
     // 创建自定义对话框
-    createDialog(title, initialStartTime, initialEndTime, callback, defaultName = '') {
+    createDialog(title, initialStartTime, initialEndTime, callback, defaultName = '', defaultColor = null) {
         const overlay = document.createElement('div');
         overlay.className = 'dialog-overlay';
         
@@ -524,26 +524,30 @@ export class Timeline {
         // 获取所有现有事件
         const events = eventService.getAllEvents();
         
-        // 获取上一个事件的颜色
-        let lastEventColor = null;
-        if (events.length > 0) {
-            lastEventColor = events[events.length - 1].color;
-        }
-        
-        // 选择一个不同的颜色
+        // 选择默认颜色
         let selectedColorIndex = 0;
-        if (lastEventColor) {
-            // 找到不同于上一个事件的颜色
-            selectedColorIndex = savedColors.findIndex((color, index) => {
-                // 如果所有颜色都用完了，就回到第一个颜色
-                if (index === savedColors.length - 1 && color === lastEventColor) {
-                    return true;
+        if (defaultColor) {
+            // 如果有默认颜色（编辑模式），使用该颜色
+            selectedColorIndex = savedColors.findIndex(color => color === defaultColor);
+            if (selectedColorIndex === -1) {
+                // 如果默认颜色不在预设颜色中，添加到预设颜色列表
+                savedColors.push(defaultColor);
+                selectedColorIndex = savedColors.length - 1;
+                localStorage.setItem('predefinedColors', JSON.stringify(savedColors));
+            }
+        } else {
+            // 如果是新建事件，选择一个不同于上一个事件的颜色
+            const lastEventColor = events.length > 0 ? events[events.length - 1].color : null;
+            if (lastEventColor) {
+                selectedColorIndex = savedColors.findIndex((color, index) => {
+                    if (index === savedColors.length - 1 && color === lastEventColor) {
+                        return true;
+                    }
+                    return color !== lastEventColor;
+                });
+                if (selectedColorIndex === savedColors.length - 1 && savedColors[selectedColorIndex] === lastEventColor) {
+                    selectedColorIndex = 0;
                 }
-                return color !== lastEventColor;
-            });
-            // 如果找到的是最后一个颜色并且与上一个事件相同，就选择第一个颜色
-            if (selectedColorIndex === savedColors.length - 1 && savedColors[selectedColorIndex] === lastEventColor) {
-                selectedColorIndex = 0;
             }
         }
         
@@ -701,7 +705,7 @@ export class Timeline {
         this.adjustedStartTime = null;
         this.adjustedEndTime = null;
         
-        // 使用自定义对话框，新建事件时不传入默认名称
+        // 使用自定义对话框，新建事件时不传入默认名称和颜色
         this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, dialogStartTime, dialogEndTime) => {
             if (name) {
                 const event = {
@@ -718,6 +722,6 @@ export class Timeline {
                     this.createAlertDialog(error.message);
                 }
             }
-        });
+        }, '', null);
     }
 }
