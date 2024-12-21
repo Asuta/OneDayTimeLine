@@ -145,4 +145,76 @@ button:hover {
 
 .event-item .delete-btn:hover {
     background-color: #c82333;
+}
+
+/* 主题切换按钮样式 */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007bff;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.theme-toggle:hover {
+    background-color: #0056b3;
+}
+
+.theme-toggle i {
+    color: white;
+    font-size: 20px;
+}
+
+/* 深色模式样式 */
+body.dark-mode {
+    background-color: #1a1a1a;
+}
+
+.dark-mode .container {
+    background-color: #2d2d2d;
+    box-shadow: 0 2px 4px rgba(255,255,255,0.1);
+}
+
+.dark-mode .control-panel {
+    background-color: #383838;
+}
+
+.dark-mode .form-group label {
+    color: #e0e0e0;
+}
+
+.dark-mode .form-group input {
+    background-color: #2d2d2d;
+    border-color: #4d4d4d;
+    color: #e0e0e0;
+}
+
+.dark-mode .timeline-container {
+    background-color: #2d2d2d;
+}
+
+.dark-mode .timeline-hour {
+    color: #e0e0e0;
+}
+
+.dark-mode .timeline {
+    border-right-color: #4d4d4d;
+}
+
+.dark-mode .event-list {
+    background-color: #383838;
+}
+
+.dark-mode .event-item {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
 } 

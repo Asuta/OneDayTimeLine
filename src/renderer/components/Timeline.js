@@ -8,9 +8,11 @@ export class Timeline {
         this.container = document.querySelector('.timeline-container');
         this.content = document.getElementById('timeline-content');
         this.eventsContainer = document.getElementById('events');
+        this.isDarkMode = localStorage.getItem('darkMode') === 'true';
         
         this.initialize();
         this.bindEvents();
+        this.initializeThemeToggle();
     }
 
     initialize() {
@@ -23,6 +25,27 @@ export class Timeline {
         
         // 注册事件服务监听器
         eventService.addListener(() => this.renderEvents());
+
+        // 应用保存的主题
+        if (this.isDarkMode) {
+            document.body.classList.add('dark-mode');
+        }
+    }
+
+    initializeThemeToggle() {
+        // 创建主题切换按钮
+        const themeToggle = document.createElement('button');
+        themeToggle.className = 'theme-toggle';
+        themeToggle.innerHTML = `<i>${this.isDarkMode ? '☀️' : '🌙'}</i>`;
+        document.body.appendChild(themeToggle);
+
+        // 添加点击事件
+        themeToggle.addEventListener('click', () => {
+            this.isDarkMode = !this.isDarkMode;
+            document.body.classList.toggle('dark-mode');
+            themeToggle.innerHTML = `<i>${this.isDarkMode ? '☀️' : '🌙'}</i>`;
+            localStorage.setItem('darkMode', this.isDarkMode);
+        });
     }
 
     updateTimelineHeight() {
