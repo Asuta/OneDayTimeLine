@@ -56,10 +56,18 @@ export class Timeline {
         document.body.appendChild(tooltip);
         this.tooltip = tooltip;
 
+        // 创建时间指示虚线
+        const indicator = document.createElement('div');
+        indicator.className = 'time-indicator';
+        this.content.appendChild(indicator);
+        this.indicator = indicator;
+
         // 监听时间轴区域的鼠标移动
         this.content.addEventListener('mousemove', (e) => {
             const timeline = document.getElementById('timeline');
             const timelineRect = timeline.getBoundingClientRect();
+            const contentRect = this.content.getBoundingClientRect();
+            const scrollTop = this.container.scrollTop;
             
             // 计算鼠标在时间轴上的相对位置（0-1之间的值）
             const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
@@ -67,9 +75,10 @@ export class Timeline {
             // 将相对位置转换为24小时制的时间（0-24之间的值）
             const totalHours = relativePosition * 24;
             
-            // 如果时间超出范围，不显示tooltip
+            // 如果时间超出范围，隐藏tooltip和指示线
             if (totalHours < 0 || totalHours > 24) {
                 this.tooltip.style.display = 'none';
+                this.indicator.style.display = 'none';
                 return;
             }
             
@@ -85,11 +94,19 @@ export class Timeline {
             this.tooltip.style.left = `${e.clientX + 10}px`;
             this.tooltip.style.top = `${e.clientY + 10}px`;
             this.tooltip.textContent = timeString;
+
+            // 计算指示线的实际位置（考虑滚动和缩放）
+            const exactPosition = (totalHours / 24) * this.content.offsetHeight;
+            
+            // 更新指示线位置
+            this.indicator.style.display = 'block';
+            this.indicator.style.top = `${exactPosition}px`;
         });
 
-        // 鼠标离开时间轴区域时隐藏提示框
+        // 鼠标离开时间轴区域时隐藏提示框和指示线
         this.content.addEventListener('mouseleave', () => {
             this.tooltip.style.display = 'none';
+            this.indicator.style.display = 'none';
         });
     }
 
