@@ -34,39 +34,67 @@ function createWindow () {
 }
 
 function createTray() {
-  // 创建托盘图标
-  tray = new Tray(path.join(__dirname, 'build/icon.ico'))
-  
-  // 创建托盘菜单
-  const contextMenu = Menu.buildFromTemplate([
-    { 
-      label: '显示窗口', 
-      click: function() {
-        mainWindow.show()
-      } 
-    },
-    { type: 'separator' },
-    { 
-      label: '退出', 
-      click: function() {
-        app.isQuiting = true
-        app.quit()
-      } 
+  try {
+    // 尝试多个可能的图标路径
+    const iconPath = path.join(__dirname, 'build', 'icon.ico')
+    const alternativeIconPath = path.join(__dirname, 'icon.ico')
+    const defaultIconPath = path.join(__dirname, 'assets', 'icon.ico')
+    
+    let trayIcon = iconPath
+    if (!require('fs').existsSync(iconPath)) {
+      if (require('fs').existsSync(alternativeIconPath)) {
+        trayIcon = alternativeIconPath
+      } else if (require('fs').existsSync(defaultIconPath)) {
+        trayIcon = defaultIconPath
+      }
     }
-  ])
-  
-  // 设置托盘提示文字
-  tray.setToolTip('时间轴记录')
-  
-  // 设置托盘菜单
-  tray.setContextMenu(contextMenu)
-  
-  // 改为双击托盘图标显示窗口
-  tray.on('double-click', () => {
-    mainWindow.show()
-  })
+    
+    // 创建托盘图标
+    tray = new Tray(trayIcon)
+    
+    // 创建托盘菜单
+    const contextMenu = Menu.buildFromTemplate([
+      { 
+        label: '显示主窗口', 
+        click: () => {
+          mainWindow.show()
+        } 
+      },
+      { type: 'separator' },
+      { 
+        label: '退出', 
+        click: () => {
+          app.isQuiting = true
+          app.quit()
+        } 
+      }
+    ])
+    
+    // 设置托盘提示文字
+    tray.setToolTip('时间轴记录')
+    
+    // 设置托盘菜单
+    tray.setContextMenu(contextMenu)
+    
+    // 双击托盘图标显示窗口
+    tray.on('double-click', () => {
+      mainWindow.show()
+    })
+
+    // 单击托盘图标显示/隐藏窗口
+    tray.on('click', () => {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide()
+      } else {
+        mainWindow.show()
+      }
+    })
+  } catch (error) {
+    console.error('创建托盘图标失败:', error)
+  }
 }
 
+// 确保应用程序准备就绪后再创建窗口和托盘
 app.whenReady().then(() => {
   createWindow()
   createTray()
