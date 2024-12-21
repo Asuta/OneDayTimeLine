@@ -1,3 +1,11 @@
+const { ipcRenderer } = require('electron');
+
+// 自定义日志函数
+function log(message, data) {
+    console.log(message, data);  // 这会输出到 Electron 的主进程控制台
+    ipcRenderer.send('log-message', { message, data });  // 发送到主进程
+}
+
 // 存储事件数据
 let events = [];
 
@@ -9,20 +17,15 @@ const ZOOM_STEP = 0.1;
 
 // 初始化时间轴
 function initializeTimeline() {
-    const timeline = document.getElementById('timeline');
-    timeline.innerHTML = ''; // 清空现有内容
-    
-    // 确保时间轴容器的高度正确设置
+    const timelineContainer = document.querySelector('.timeline-container');
     const timelineContent = document.getElementById('timeline-content');
-    timelineContent.style.height = `${100 * zoomLevel}%`;
     
-    for (let i = 0; i <= 24; i++) {
-        const hour = document.createElement('div');
-        hour.className = 'timeline-hour';
-        hour.style.top = `${(i / 24) * 100}%`;  // 移除 zoomLevel，因为容器已经被缩放
-        hour.textContent = `${i.toString().padStart(2, '0')}:00`;
-        timeline.appendChild(hour);
-    }
+    // 设置初始高度为容器高度
+    const containerHeight = timelineContainer.offsetHeight;
+    timelineContent.style.height = `${containerHeight}px`;
+    
+    // 更新时间刻度
+    updateTimelineHeight();
 }
 
 // 时间字符串转换为小数小时
@@ -38,10 +41,6 @@ function hourToPosition(hour) {
 
 // 更新时间轴高度
 function updateTimelineHeight() {
-    const timelineContent = document.getElementById('timeline-content');
-    timelineContent.style.height = `${100 * zoomLevel}%`;
-    
-    // 更新时间刻度
     const timeline = document.getElementById('timeline');
     timeline.innerHTML = '';
     
@@ -63,15 +62,14 @@ function handleZoom(event) {
         const timelineContainer = document.querySelector('.timeline-container');
         const timelineContent = document.getElementById('timeline-content');
         
-        // 获取鼠标在容器中的位置
+        // 获取当前鼠标位置相对于容器的位置
         const rect = timelineContainer.getBoundingClientRect();
         const mouseY = event.clientY - rect.top;
         
-        // 计算鼠标位置对应的时间点
-        const scrollTop = timelineContainer.scrollTop;
-        const totalHeight = timelineContent.offsetHeight;
-        const mousePosition = mouseY + scrollTop;
-        const timeAtMouse = (mousePosition / totalHeight) * 24;
+        // 计算鼠标位置对应的时间点（0-24小时）
+        const currentScrollTop = timelineContainer.scrollTop;
+        const mouseContentY = mouseY + currentScrollTop;
+        const currentTime = (mouseContentY / timelineContent.offsetHeight) * 24;
         
         // 确定滚动方向
         const delta = event.deltaY < 0 ? 1 : -1;
@@ -79,26 +77,47 @@ function handleZoom(event) {
         const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomLevel + (delta * ZOOM_STEP)));
         
         if (newZoom !== zoomLevel) {
-            // 保存旧的高度
+            // 保存旧的高度和容器信息
+            const containerHeight = rect.height;
             const oldHeight = timelineContent.offsetHeight;
+            const oldScrollTop = timelineContainer.scrollTop;
             
             // 更新缩放级别
             zoomLevel = newZoom;
             
-            // 更新容器高度
-            updateTimelineHeight();
+            // 计算新的总高度（基于容器高度和缩放级别）
+            const newHeight = containerHeight * zoomLevel;
             
-            // 计算新的高度
-            const newHeight = timelineContent.offsetHeight;
+            // 设置新的高度
+            timelineContent.style.height = `${newHeight}px`;
             
-            // 计算新的滚动位置，保持鼠标指向的时间点不变
-            const newTimePosition = (timeAtMouse / 24) * newHeight;
-            const newScrollTop = newTimePosition - mouseY;
+            log('高度变化:', {
+                oldHeight,
+                newHeight,
+                heightDiff: newHeight - oldHeight,
+                zoomLevel,
+                containerHeight
+            });
             
-            // 设置新的滚动位置
+            // 计算鼠标位置在内容中的比例（0-1）
+            const mouseRatio = mouseContentY / oldHeight;
+            
+            // 计算新的滚动位置
+            const newScrollTop = (mouseRatio * newHeight) - mouseY;
+            
+            log('滚动位置计算:', {
+                mouseRatio,
+                oldScrollTop,
+                newScrollTop,
+                mouseY,
+                mouseContentY
+            });
+            
+            // 更新滚动位置
             timelineContainer.scrollTop = newScrollTop;
             
-            // 重新渲染事件
+            // 更新时间刻度和事件
+            updateTimelineHeight();
             renderEvents();
         }
     }

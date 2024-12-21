@@ -1,8 +1,13 @@
-const { app, BrowserWindow, Tray, Menu } = require('electron')
+const { app, BrowserWindow, Tray, Menu, ipcMain } = require('electron')
 const path = require('path')
 
 let tray = null
 let mainWindow = null
+
+// 添加日志处理
+ipcMain.on('log-message', (event, { message, data }) => {
+    console.log(message, data);
+});
 
 function createWindow () {
   mainWindow = new BrowserWindow({
