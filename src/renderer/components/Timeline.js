@@ -212,30 +212,22 @@ export class Timeline {
         this.eventsContainer.innerHTML = '';
         const events = eventService.getAllEvents();
         
-        console.log('渲染事件列表:', events);
-        
         events.forEach(event => {
             const eventElement = document.createElement('div');
             eventElement.className = 'event';
             eventElement.style.backgroundColor = event.color;
             
-            const startPercent = hourToPosition(timeToDecimal(event.startTime));
-            const endPercent = hourToPosition(timeToDecimal(event.endTime));
-            const heightPercent = endPercent - startPercent;
+            const startTime = timeToDecimal(event.startTime);
+            const endTime = timeToDecimal(event.endTime);
+            
+            // 计算位置（基于24小时）
+            const startPercent = (startTime / 24) * 100;
+            const heightPercent = ((endTime - startTime) / 24) * 100;
             
             // 如果事件时长小于30分钟，添加short类
-            if (timeToDecimal(event.endTime) - timeToDecimal(event.startTime) < 0.5) {
+            if (endTime - startTime < 0.5) {
                 eventElement.classList.add('short');
             }
-            
-            console.log('事件位置计算:', {
-                event: event.name,
-                startTime: event.startTime,
-                endTime: event.endTime,
-                startPercent,
-                endPercent,
-                heightPercent
-            });
             
             eventElement.style.top = `${startPercent}%`;
             eventElement.style.height = `${heightPercent}%`;
@@ -259,12 +251,14 @@ export class Timeline {
         
         const timeline = document.getElementById('timeline');
         const timelineRect = timeline.getBoundingClientRect();
-        const contentRect = this.content.getBoundingClientRect();
         
         // 确保点击在时间轴区域内
         if (e.clientX > timelineRect.right) {
             this.isDragging = true;
-            this.dragStartY = e.clientY + this.container.scrollTop - contentRect.top;
+            
+            // 计算相对于时间轴的位置（与时间指示器相同的计算方法）
+            const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
+            this.dragStartTime = relativePosition * 24;
             
             // 创建临时事件元素
             this.tempEvent = document.createElement('div');
@@ -272,9 +266,8 @@ export class Timeline {
             this.tempEvent.style.backgroundColor = 'rgba(0, 123, 255, 0.5)';
             this.tempEvent.style.border = '2px dashed #007bff';
             
-            // 计算开始位置
-            const startPercent = (this.dragStartY / this.content.offsetHeight) * 100;
-            
+            // 设置初始位置（使用相对于时间轴的位置）
+            const startPercent = relativePosition * 100;
             this.tempEvent.style.top = `${startPercent}%`;
             this.tempEvent.style.height = '0';
             
@@ -285,38 +278,38 @@ export class Timeline {
     handleDragMove(e) {
         if (!this.isDragging || !this.tempEvent) return;
         
-        const contentRect = this.content.getBoundingClientRect();
-        const currentY = e.clientY + this.container.scrollTop - contentRect.top;
+        const timeline = document.getElementById('timeline');
+        const timelineRect = timeline.getBoundingClientRect();
         
-        // 计算开始和结束位置
-        const startY = Math.min(this.dragStartY, currentY);
-        const endY = Math.max(this.dragStartY, currentY);
+        // 计算相对于时间轴的位置（与时间指示器相同的计算方法）
+        const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
+        const currentTime = relativePosition * 24;
         
-        // 更新临时事件的位置和大小
-        const startPercent = (startY / this.content.offsetHeight) * 100;
-        const heightPercent = ((endY - startY) / this.content.offsetHeight) * 100;
+        // 计算开始和结束时间
+        const startTime = Math.min(this.dragStartTime, currentTime);
+        const endTime = Math.max(this.dragStartTime, currentTime);
+        
+        // 更新临时事件的位置和大小（使用相对于时间轴的位置）
+        const startPercent = (startTime / 24) * 100;
+        const heightPercent = ((endTime - startTime) / 24) * 100;
         
         this.tempEvent.style.top = `${startPercent}%`;
         this.tempEvent.style.height = `${heightPercent}%`;
         
-        // 显示时间提示
-        const startHour = (startPercent / 100) * 24;
-        const endHour = ((startPercent + heightPercent) / 100) * 24;
-        
         const formatTime = (hour) => {
-            const h = Math.floor(hour);
-            const m = Math.floor((hour - h) * 60);
+            const h = Math.floor(Math.max(0, Math.min(23, hour)));
+            const m = Math.floor((hour - Math.floor(hour)) * 60);
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         };
         
         // 如果事件时长小于30分钟，添加short类
-        if (Math.abs(endHour - startHour) < 0.5) {
+        if (Math.abs(endTime - startTime) < 0.5) {
             this.tempEvent.classList.add('short');
         } else {
             this.tempEvent.classList.remove('short');
         }
         
-        this.tempEvent.textContent = `${formatTime(startHour)} - ${formatTime(endHour)}`;
+        this.tempEvent.textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
     }
 
     // 创建自定义对话框
@@ -426,16 +419,16 @@ export class Timeline {
     handleDragEnd(e) {
         if (!this.isDragging || !this.tempEvent) return;
         
-        const contentRect = this.content.getBoundingClientRect();
-        const currentY = e.clientY + this.container.scrollTop - contentRect.top;
+        const timeline = document.getElementById('timeline');
+        const timelineRect = timeline.getBoundingClientRect();
         
-        // 计算开始和结束位置
-        const startY = Math.min(this.dragStartY, currentY);
-        const endY = Math.max(this.dragStartY, currentY);
+        // 计算相对于时间轴的位置（与时间指示器相同的计算方法）
+        const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
+        const currentTime = relativePosition * 24;
         
-        // 计算时间
-        const startHour = (startY / this.content.offsetHeight) * 24;
-        const endHour = (endY / this.content.offsetHeight) * 24;
+        // 计算开始和结束时间
+        const startTime = Math.min(this.dragStartTime, currentTime);
+        const endTime = Math.max(this.dragStartTime, currentTime);
         
         // 移除临时事件
         this.tempEvent.remove();
@@ -443,52 +436,37 @@ export class Timeline {
         this.isDragging = false;
         
         // 如果拖拽时间太短，不创建事件
-        if (Math.abs(endHour - startHour) < 0.01) {
+        if (Math.abs(endTime - startTime) < 0.01) {
             console.log('拖拽时间太短，不创建事件');
             return;
         }
         
-        // 格式化时间
         const formatTime = (hour) => {
             const h = Math.floor(Math.max(0, Math.min(23, hour)));
             const m = Math.floor((hour - Math.floor(hour)) * 60);
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         };
         
-        const startTime = formatTime(startHour);
-        const endTime = formatTime(endHour);
-        
-        console.log('创建事件:', {
-            startY,
-            endY,
-            startHour,
-            endHour,
-            startTime,
-            endTime
-        });
+        const formattedStartTime = formatTime(startTime);
+        const formattedEndTime = formatTime(endTime);
         
         // 使用自定义对话框
         this.createDialog('新建事件', (name, color) => {
             if (name) {
                 const event = {
-                    startTime,
-                    endTime,
+                    startTime: formattedStartTime,
+                    endTime: formattedEndTime,
                     name,
                     color: color || '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
                 };
                 
-                console.log('添加事件:', event);
-                
                 try {
                     eventService.addEvent(event);
-                    console.log('事件添加成功');
                     this.renderEvents(); // 立即重新渲染事件
                 } catch (error) {
                     console.error('添加事件失败:', error);
                     alert(error.message);
                 }
-            } else {
-                console.log('用户取消创建事件');
             }
         });
     }

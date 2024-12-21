@@ -161,6 +161,9 @@ button:hover {
     padding: 20px;
     background-color: #f8f9fa;
     border-radius: 8px;
+    height: calc(100vh - 40px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .event-item {
@@ -419,4 +422,37 @@ body.dark-mode {
     background-color: #383838;
     border-color: #4d4d4d;
     color: #e0e0e0;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* 深色模式滚动条 */
+.dark-mode ::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+    background: #666;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #888;
 } 
