@@ -10,6 +10,9 @@ export class Timeline {
         this.eventsContainer = document.getElementById('events');
         this.isDarkMode = localStorage.getItem('darkMode') === 'true';
         
+        // 短事件的时间阈值（小时）
+        this.shortEventThreshold = 0.01; // 15分钟，您可以根据需要调整这个值
+        
         // 拖拽相关状态
         this.isDragging = false;
         this.dragStartY = 0;
@@ -224,14 +227,31 @@ export class Timeline {
             const startPercent = (startTime / 24) * 100;
             const heightPercent = ((endTime - startTime) / 24) * 100;
             
-            // 如果事件时长小于30分钟，添加short类
-            if (endTime - startTime < 0.5) {
+            // 使用设置的阈值判断是否为短事件
+            if (endTime - startTime < this.shortEventThreshold) {
                 eventElement.classList.add('short');
             }
             
             eventElement.style.top = `${startPercent}%`;
             eventElement.style.height = `${heightPercent}%`;
-            eventElement.textContent = `${event.name} (${event.startTime}-${event.endTime})`;
+            
+            // 创建事件内容容器
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'event-content';
+            
+            // 添加事件名称
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'event-name';
+            nameSpan.textContent = event.name;
+            contentDiv.appendChild(nameSpan);
+            
+            // 添加时间信息
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'event-time';
+            timeSpan.textContent = ` (${event.startTime}-${event.endTime})`;
+            contentDiv.appendChild(timeSpan);
+            
+            eventElement.appendChild(contentDiv);
             this.eventsContainer.appendChild(eventElement);
         });
     }
@@ -285,31 +305,62 @@ export class Timeline {
         const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
         const currentTime = relativePosition * 24;
         
-        // 计算开始和结束时间
-        const startTime = Math.min(this.dragStartTime, currentTime);
-        const endTime = Math.max(this.dragStartTime, currentTime);
+        // 获取所有现有事件
+        const events = eventService.getAllEvents();
         
-        // 更新临时事件的位置和大小（使用相对于时间轴的位置）
-        const startPercent = (startTime / 24) * 100;
-        const heightPercent = ((endTime - startTime) / 24) * 100;
-        
-        this.tempEvent.style.top = `${startPercent}%`;
-        this.tempEvent.style.height = `${heightPercent}%`;
+        // 计算初始的开始和结束时间
+        let startTime = Math.min(this.dragStartTime, currentTime);
+        let endTime = Math.max(this.dragStartTime, currentTime);
         
         const formatTime = (hour) => {
             const h = Math.floor(Math.max(0, Math.min(23, hour)));
             const m = Math.floor((hour - Math.floor(hour)) * 60);
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         };
+
+        // 将当前拖动的时间转换为时间字符串格式
+        let formattedStartTime = formatTime(startTime);
+        let formattedEndTime = formatTime(endTime);
         
-        // 如果事件时长小于30分钟，添加short类
-        if (Math.abs(endTime - startTime) < 0.5) {
+        // 检查并调整时间以避免重叠
+        events.forEach(event => {
+            // 使用字符串比较来检查重叠
+            if ((formattedStartTime < event.endTime && formattedEndTime > event.startTime)) {
+                // 如果是向上拖动（endTime在eventStart附近）
+                if (Math.abs(timeToDecimal(formattedEndTime) - timeToDecimal(event.startTime)) < 
+                    Math.abs(timeToDecimal(formattedStartTime) - timeToDecimal(event.endTime))) {
+                    // 直接使用事件的开始时间字符串
+                    formattedEndTime = event.startTime;
+                    endTime = timeToDecimal(event.startTime);
+                }
+                // 如果是向下拖动（startTime在eventEnd附近）
+                else {
+                    // 直接使用事件的结束时间字符串
+                    formattedStartTime = event.endTime;
+                    startTime = timeToDecimal(event.endTime);
+                }
+            }
+        });
+        
+        // 更新临时事件的位置和大小
+        const startPercent = (startTime / 24) * 100;
+        const heightPercent = ((endTime - startTime) / 24) * 100;
+        
+        this.tempEvent.style.top = `${startPercent}%`;
+        this.tempEvent.style.height = `${heightPercent}%`;
+        
+        // 如果事件时长小于阈值，添加short类
+        if (Math.abs(endTime - startTime) < this.shortEventThreshold) {
             this.tempEvent.classList.add('short');
         } else {
             this.tempEvent.classList.remove('short');
         }
         
-        this.tempEvent.textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+        // 保存调整后的时间字符串，供handleDragEnd使用
+        this.adjustedStartTime = formattedStartTime;
+        this.adjustedEndTime = formattedEndTime;
+        
+        this.tempEvent.textContent = `${formattedStartTime} - ${formattedEndTime}`;
     }
 
     // 创建自定义对话框
@@ -440,43 +491,27 @@ export class Timeline {
     handleDragEnd(e) {
         if (!this.isDragging || !this.tempEvent) return;
         
-        const timeline = document.getElementById('timeline');
-        const timelineRect = timeline.getBoundingClientRect();
-        
-        // 计算相对于时间轴的位置（与时间指示器相同的计算方法）
-        const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
-        const currentTime = relativePosition * 24;
-        
-        // 计算开始和结束时间
-        const startTime = Math.min(this.dragStartTime, currentTime);
-        const endTime = Math.max(this.dragStartTime, currentTime);
-        
         // 移除临时事件
         this.tempEvent.remove();
         this.tempEvent = null;
         this.isDragging = false;
         
-        // 如果拖拽时间太短，不创建事件
-        if (Math.abs(endTime - startTime) < 0.01) {
-            console.log('拖拽时间太短，不创建事件');
+        // 使用调整后的时间字符串
+        const formattedStartTime = this.adjustedStartTime;
+        const formattedEndTime = this.adjustedEndTime;
+        
+        // 如果没有有效的时间，不创建事件
+        if (!formattedStartTime || !formattedEndTime) {
+            console.log('无效的时间范围，不创建事件');
             return;
         }
         
-        const formatTime = (hour) => {
-            const h = Math.floor(Math.max(0, Math.min(23, hour)));
-            const m = Math.floor((hour - Math.floor(hour)) * 60);
-            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-        };
-        
-        const formattedStartTime = formatTime(startTime);
-        const formattedEndTime = formatTime(endTime);
-        
         // 使用自定义对话框
-        this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, startTime, endTime) => {
+        this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, dialogStartTime, dialogEndTime) => {
             if (name) {
                 const event = {
-                    startTime: startTime || formattedStartTime,
-                    endTime: endTime || formattedEndTime,
+                    startTime: dialogStartTime || formattedStartTime,
+                    endTime: dialogEndTime || formattedEndTime,
                     name,
                     color: color || '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
                 };
