@@ -211,6 +211,46 @@ export class Timeline {
         }
     }
 
+    // 创建确认删除对话框
+    createConfirmDialog(message, onConfirm) {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'dialog confirm-dialog';
+        
+        dialog.innerHTML = `
+            <div class="dialog-content">
+                <p>${message}</p>
+                <div class="dialog-buttons">
+                    <button class="cancel">取消</button>
+                    <button class="confirm">确定</button>
+                </div>
+            </div>
+        `;
+        
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        // 处理按钮点击
+        dialog.querySelector('.confirm').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            if (onConfirm) onConfirm();
+        });
+        
+        dialog.querySelector('.cancel').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+        
+        // 处理ESC键
+        document.addEventListener('keyup', function handleEsc(e) {
+            if (e.key === 'Escape') {
+                document.body.removeChild(overlay);
+                document.removeEventListener('keyup', handleEsc);
+            }
+        });
+    }
+
     renderEvents() {
         this.eventsContainer.innerHTML = '';
         const events = eventService.getAllEvents();
@@ -251,6 +291,21 @@ export class Timeline {
             timeSpan.textContent = ` (${event.startTime}-${event.endTime})`;
             contentDiv.appendChild(timeSpan);
             
+            // 添加删除按钮
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.title = '删除事件';
+            
+            // 阻止删除按钮的点击事件冒泡到事件块
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.createConfirmDialog('确定要删除这个事件吗？', () => {
+                    eventService.deleteEvent(index);
+                });
+            });
+            
+            eventElement.appendChild(deleteBtn);
             eventElement.appendChild(contentDiv);
             
             // 添加双击编辑功能
