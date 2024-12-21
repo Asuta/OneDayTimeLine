@@ -215,7 +215,7 @@ export class Timeline {
         this.eventsContainer.innerHTML = '';
         const events = eventService.getAllEvents();
         
-        events.forEach(event => {
+        events.forEach((event, index) => {
             const eventElement = document.createElement('div');
             eventElement.className = 'event';
             eventElement.style.backgroundColor = event.color;
@@ -252,8 +252,48 @@ export class Timeline {
             contentDiv.appendChild(timeSpan);
             
             eventElement.appendChild(contentDiv);
+            
+            // 添加双击编辑功能
+            eventElement.addEventListener('dblclick', () => {
+                this.editEvent(event, index);
+            });
+            
             this.eventsContainer.appendChild(eventElement);
         });
+    }
+
+    // 编辑事件的方法
+    editEvent(event, index) {
+        this.createDialog('编辑事件', event.startTime, event.endTime, (name, color, dialogStartTime, dialogEndTime) => {
+            if (name) {
+                const updatedEvent = {
+                    ...event,
+                    name,
+                    color,
+                    startTime: dialogStartTime,
+                    endTime: dialogEndTime
+                };
+                
+                try {
+                    // 先从eventService中删除原事件
+                    eventService.deleteEvent(index);
+                    
+                    // 再添加更新后的事件
+                    eventService.addEvent(updatedEvent);
+                    
+                } catch (error) {
+                    console.error('更新事件失败:', error);
+                    alert(error.message);
+                    // 如果更新失败，恢复原事件
+                    try {
+                        eventService.addEvent(event);
+                    } catch (restoreError) {
+                        console.error('恢复原事件失败:', restoreError);
+                        alert('更新失败，且无法恢复原事件，请刷新页面。');
+                    }
+                }
+            }
+        }, event.name); // 传入默认名称
     }
 
     bindEvents() {
@@ -364,7 +404,7 @@ export class Timeline {
     }
 
     // 创建自定义对话框
-    createDialog(title, initialStartTime, initialEndTime, callback) {
+    createDialog(title, initialStartTime, initialEndTime, callback, defaultName = '') {
         const overlay = document.createElement('div');
         overlay.className = 'dialog-overlay';
         
@@ -408,7 +448,7 @@ export class Timeline {
             <div class="dialog-form">
                 <div class="form-group">
                     <label>事件名称:</label>
-                    <input type="text" class="event-name" placeholder="请输入事件名称" />
+                    <input type="text" class="event-name" placeholder="请输入事件名称" value="${defaultName}" />
                 </div>
                 <div class="form-group">
                     <label>开始时间:</label>
@@ -531,7 +571,7 @@ export class Timeline {
             return;
         }
         
-        // 使用自定义对话框
+        // 使用自定义对话框，新建事件时不传入默认名称
         this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, dialogStartTime, dialogEndTime) => {
             if (name) {
                 const event = {

@@ -8,7 +8,7 @@ class EventService {
     }
 
     // 添加事件
-    addEvent(event) {
+    addEvent(event, excludeIndex = -1) {
         console.log('尝试添加事件:', event);
         
         // 验证时间
@@ -28,7 +28,12 @@ class EventService {
         }
         
         // 检查时间冲突
-        const hasConflict = this.events.some(existingEvent => {
+        const hasConflict = this.events.some((existingEvent, index) => {
+            // 如果是被排除的索引，跳过冲突检查
+            if (index === excludeIndex) {
+                return false;
+            }
+            
             const newStart = timeToDecimal(event.startTime);
             const newEnd = timeToDecimal(event.endTime);
             const eventStart = timeToDecimal(existingEvent.startTime);
@@ -48,7 +53,7 @@ class EventService {
             console.error('时间冲突验证失败');
             throw new Error('该时间段与现有事件冲突！');
         }
-        
+
         this.events.push(event);
         this.events.sort((a, b) => timeToDecimal(a.startTime) - timeToDecimal(b.startTime));
         console.log('事件添加成功，当前事件列表:', this.events);
