@@ -234,4 +234,27 @@ body.dark-mode {
 
 .dark-mode .time-tooltip {
     background-color: rgba(0, 123, 255, 0.9);
+}
+
+/* 时间刻度线样式 */
+.timeline-mark {
+    position: absolute;
+    right: 0;
+    width: 10px;
+    height: 1px;
+    background-color: #666;
+}
+
+.timeline-mark.hour {
+    width: 15px;
+    height: 2px;
+}
+
+.timeline-mark.half-hour {
+    width: 8px;
+    height: 1px;
+}
+
+.dark-mode .timeline-mark {
+    background-color: #999;
 } 

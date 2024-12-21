@@ -97,12 +97,40 @@ export class Timeline {
         const timeline = document.getElementById('timeline');
         timeline.innerHTML = '';
         
+        // 添加24小时的刻度
         for (let i = 0; i <= 24; i++) {
-            const hour = document.createElement('div');
-            hour.className = 'timeline-hour';
-            hour.style.top = `${(i / 24) * 100}%`;
-            hour.textContent = `${i.toString().padStart(2, '0')}:00`;
-            timeline.appendChild(hour);
+            // 添加整点刻度和时间
+            const hourContainer = document.createElement('div');
+            hourContainer.style.position = 'absolute';
+            hourContainer.style.top = `${(i / 24) * 100}%`;
+            hourContainer.style.width = '100%';
+            
+            // 添加时间文本
+            const hourText = document.createElement('div');
+            hourText.className = 'timeline-hour';
+            hourText.textContent = `${i.toString().padStart(2, '0')}:00`;
+            hourContainer.appendChild(hourText);
+            
+            // 添加整点刻度线
+            const hourMark = document.createElement('div');
+            hourMark.className = 'timeline-mark hour';
+            hourContainer.appendChild(hourMark);
+            
+            timeline.appendChild(hourContainer);
+            
+            // 如果不是最后一个小时，添加半小时刻度
+            if (i < 24) {
+                const halfHourContainer = document.createElement('div');
+                halfHourContainer.style.position = 'absolute';
+                halfHourContainer.style.top = `${((i + 0.5) / 24) * 100}%`;
+                halfHourContainer.style.width = '100%';
+                
+                const halfHourMark = document.createElement('div');
+                halfHourMark.className = 'timeline-mark half-hour';
+                halfHourContainer.appendChild(halfHourMark);
+                
+                timeline.appendChild(halfHourContainer);
+            }
         }
     }
 
