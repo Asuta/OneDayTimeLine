@@ -581,45 +581,56 @@ export class Timeline {
             });
         });
         
-        // 处理按钮点击
-        dialog.querySelector('.confirm').addEventListener('click', () => {
+        // 处理确认操作
+        const handleConfirm = () => {
             const name = nameInput.value.trim();
             const startTime = startTimeInput.value;
             const endTime = endTimeInput.value;
             
             if (name && startTime && endTime) {
                 callback(name, selectedColor, startTime, endTime);
+                document.body.removeChild(overlay);
+            } else {
+                // 如果缺少必要信息，聚焦到第一个空的输入框
+                if (!name) nameInput.focus();
+                else if (!startTime) startTimeInput.focus();
+                else if (!endTime) endTimeInput.focus();
             }
-            document.body.removeChild(overlay);
-        });
+        };
         
-        dialog.querySelector('.cancel').addEventListener('click', () => {
+        // 处理取消操作
+        const handleCancel = () => {
             document.body.removeChild(overlay);
             this.isDragging = false;
             this.adjustedStartTime = null;
             this.adjustedEndTime = null;
             if (callback) callback(null);
-        });
+        };
         
-        // 处理按键事件
-        nameInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') {
-                const name = nameInput.value.trim();
-                const startTime = startTimeInput.value;
-                const endTime = endTimeInput.value;
-                
-                if (name && startTime && endTime) {
-                    callback(name, selectedColor, startTime, endTime);
-                    document.body.removeChild(overlay);
-                }
+        // 处理按钮点击
+        dialog.querySelector('.confirm').addEventListener('click', handleConfirm);
+        dialog.querySelector('.cancel').addEventListener('click', handleCancel);
+        
+        // 处理对话框内的所有按键事件
+        dialog.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.isComposing) {
+                e.preventDefault(); // 防止表单提交
+                handleConfirm();
             } else if (e.key === 'Escape') {
-                document.body.removeChild(overlay);
-                this.isDragging = false;
-                this.adjustedStartTime = null;
-                this.adjustedEndTime = null;
-                if (callback) callback(null);
+                e.preventDefault();
+                handleCancel();
             }
         });
+        
+        // 防止事件冒泡到document
+        dialog.addEventListener('keyup', (e) => {
+            e.stopPropagation();
+        });
+        
+        // 自动聚焦到名称输入框
+        setTimeout(() => {
+            nameInput.focus();
+        }, 0);
     }
 
     handleDragEnd(e) {
