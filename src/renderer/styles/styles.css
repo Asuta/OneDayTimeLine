@@ -291,4 +291,63 @@ body.dark-mode {
 
 .dark-mode .time-indicator {
     border-top-color: #3498db;
+}
+
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.dialog {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+}
+
+.dialog input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.dialog-buttons button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: auto;
+}
+
+.dialog-buttons button.cancel {
+    background-color: #6c757d;
+}
+
+.dark-mode .dialog {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+}
+
+.dark-mode .dialog input {
+    background-color: #383838;
+    border-color: #4d4d4d;
+    color: #e0e0e0;
 } 
