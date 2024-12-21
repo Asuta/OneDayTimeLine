@@ -313,6 +313,14 @@ export class Timeline {
             timeSpan.textContent = ` (${event.startTime}-${event.endTime})`;
             contentDiv.appendChild(timeSpan);
             
+            // 添加浪费时间信息（如果有）
+            if (event.wastedTime > 0) {
+                const wastedTimeSpan = document.createElement('span');
+                wastedTimeSpan.className = 'wasted-time';
+                wastedTimeSpan.textContent = ` [浪费: ${event.wastedTime}分钟]`;
+                contentDiv.appendChild(wastedTimeSpan);
+            }
+            
             // 添加删除按钮
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
@@ -382,14 +390,15 @@ export class Timeline {
 
     // 编辑事件的方法
     editEvent(event, index) {
-        this.createDialog('编辑事件', event.startTime, event.endTime, (name, color, dialogStartTime, dialogEndTime) => {
+        this.createDialog('编辑事件', event.startTime, event.endTime, (name, color, dialogStartTime, dialogEndTime, wastedTime) => {
             if (name) {
                 const updatedEvent = {
                     ...event,
                     name,
                     color,
                     startTime: dialogStartTime,
-                    endTime: dialogEndTime
+                    endTime: dialogEndTime,
+                    wastedTime
                 };
                 
                 try {
@@ -411,7 +420,7 @@ export class Timeline {
                     }
                 }
             }
-        }, event.name, event.color); // 传入默认名称和默认颜色
+        }, event.name, event.color, event.wastedTime || 0); // 传入默认名称、颜色和浪费时间
     }
 
     bindEvents() {
@@ -530,7 +539,7 @@ export class Timeline {
     }
 
     // 创建自定义对话框
-    createDialog(title, initialStartTime, initialEndTime, callback, defaultName = '', defaultColor = null) {
+    createDialog(title, initialStartTime, initialEndTime, callback, defaultName = '', defaultColor = null, defaultWastedTime = 0) {
         const overlay = document.createElement('div');
         overlay.className = 'dialog-overlay';
         
@@ -588,6 +597,10 @@ export class Timeline {
                     <label>结束时间:</label>
                     <input type="time" class="end-time" value="${initialEndTime}" />
                 </div>
+                <div class="form-group">
+                    <label>浪费的时间(分钟):</label>
+                    <input type="number" class="wasted-time" min="0" max="1440" value="${defaultWastedTime}" />
+                </div>
                 <div class="color-picker-grid">
                     ${savedColors.map((color, index) => `
                         <div class="color-box${index === selectedColorIndex ? ' selected' : ''}" 
@@ -610,6 +623,7 @@ export class Timeline {
         const nameInput = dialog.querySelector('.event-name');
         const startTimeInput = dialog.querySelector('.start-time');
         const endTimeInput = dialog.querySelector('.end-time');
+        const wastedTimeInput = dialog.querySelector('.wasted-time');
         nameInput.focus();
         
         let selectedColor = savedColors[selectedColorIndex];
@@ -653,9 +667,10 @@ export class Timeline {
             const name = nameInput.value.trim();
             const startTime = startTimeInput.value;
             const endTime = endTimeInput.value;
+            const wastedTime = parseInt(wastedTimeInput.value) || 0;
             
             if (name && startTime && endTime) {
-                callback(name, selectedColor, startTime, endTime);
+                callback(name, selectedColor, startTime, endTime, wastedTime);
                 document.body.removeChild(overlay);
             } else {
                 // 如果缺少必要信息，聚焦到第一个空的输入框
@@ -681,7 +696,7 @@ export class Timeline {
         // 处理对话框内的所有按键事件
         dialog.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.isComposing) {
-                e.preventDefault(); // 防止表单提交
+                e.preventDefault(); // ���止表单提交
                 handleConfirm();
             } else if (e.key === 'Escape') {
                 e.preventDefault();
@@ -728,13 +743,14 @@ export class Timeline {
         this.adjustedEndTime = null;
         
         // 使用自定义对话框，新建事件时不传入默认名称和颜色
-        this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, dialogStartTime, dialogEndTime) => {
+        this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, dialogStartTime, dialogEndTime, wastedTime) => {
             if (name) {
                 const event = {
                     startTime: dialogStartTime || formattedStartTime,
                     endTime: dialogEndTime || formattedEndTime,
                     name,
-                    color: color || '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
+                    color: color || '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'),
+                    wastedTime
                 };
                 
                 try {
@@ -744,6 +760,6 @@ export class Timeline {
                     this.createAlertDialog(error.message);
                 }
             }
-        }, '', null);
+        }, '', null, 0);
     }
 }

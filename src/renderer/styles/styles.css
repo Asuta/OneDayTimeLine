@@ -442,6 +442,32 @@ body.dark-mode {
     cursor: pointer;
 }
 
+.dialog .form-group input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.dialog .form-group input[type="number"]:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.dark-mode .dialog .form-group input[type="number"] {
+    background-color: #383838;
+    border-color: #4d4d4d;
+    color: #e0e0e0;
+}
+
+.dark-mode .dialog .form-group input[type="number"]:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+}
+
 .color-picker-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -638,4 +664,16 @@ body.dark-mode {
 
 .clear-all-btn:hover {
     background-color: #c82333;
+}
+
+/* 添加浪费时间显示样式 */
+.event-content .wasted-time {
+    margin-left: 5px;
+    font-size: 11px;
+    opacity: 0.8;
+    color: #ffffff;
+}
+
+.dark-mode .event-content .wasted-time {
+    color: #ffffff;
 } 
