@@ -58,20 +58,27 @@ export class Timeline {
 
         // 监听时间轴区域的鼠标移动
         this.content.addEventListener('mousemove', (e) => {
-            const timelineRect = this.content.getBoundingClientRect();
-            const scrollTop = this.container.scrollTop;
+            const timeline = document.getElementById('timeline');
+            const timelineRect = timeline.getBoundingClientRect();
             
-            // 计算鼠标相对于时间轴的位置
-            const relativeY = e.clientY - timelineRect.top + scrollTop;
-            const totalHeight = this.content.offsetHeight;
+            // 计算鼠标在时间轴上的相对位置（0-1之间的值）
+            const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
             
-            // 计算时间
-            const hours = (relativeY / totalHeight) * 24;
-            const hoursFloor = Math.floor(hours);
-            const minutes = Math.floor((hours - hoursFloor) * 60);
+            // 将相对位置转换为24小时制的时间（0-24之间的值）
+            const totalHours = relativePosition * 24;
             
-            // 格式化时间
-            const timeString = `${hoursFloor.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            // 如果时间超出范围，不显示tooltip
+            if (totalHours < 0 || totalHours > 24) {
+                this.tooltip.style.display = 'none';
+                return;
+            }
+            
+            // 计算小时和分钟
+            const hours = Math.floor(totalHours);
+            const minutes = Math.floor((totalHours - hours) * 60);
+            
+            // 格式化时间字符串
+            const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
             
             // 更新提示框位置和内容
             this.tooltip.style.display = 'block';
