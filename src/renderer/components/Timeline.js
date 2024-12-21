@@ -10,6 +10,11 @@ export class Timeline {
         this.eventsContainer = document.getElementById('events');
         this.isDarkMode = localStorage.getItem('darkMode') === 'true';
         
+        // 拖拽相关状态
+        this.isDragging = false;
+        this.dragStartY = 0;
+        this.tempEvent = null;
+        
         this.initialize();
         this.bindEvents();
         this.initializeThemeToggle();
@@ -220,5 +225,111 @@ export class Timeline {
 
     bindEvents() {
         this.container.addEventListener('wheel', this.handleZoom.bind(this));
+        
+        // 添加拖拽相关事件监听
+        this.content.addEventListener('mousedown', this.handleDragStart.bind(this));
+        document.addEventListener('mousemove', this.handleDragMove.bind(this));
+        document.addEventListener('mouseup', this.handleDragEnd.bind(this));
+    }
+
+    handleDragStart(e) {
+        // 只响应左键点击
+        if (e.button !== 0) return;
+        
+        const timeline = document.getElementById('timeline');
+        const timelineRect = timeline.getBoundingClientRect();
+        
+        // 确保点击在时间轴区域内
+        if (e.clientX > timelineRect.right) {
+            this.isDragging = true;
+            this.dragStartY = e.clientY;
+            
+            // 创建临时事件元素
+            this.tempEvent = document.createElement('div');
+            this.tempEvent.className = 'event temp-event';
+            this.tempEvent.style.backgroundColor = 'rgba(0, 123, 255, 0.5)';
+            this.tempEvent.style.border = '2px dashed #007bff';
+            
+            // 计算开始位置
+            const contentRect = this.content.getBoundingClientRect();
+            const relativeY = e.clientY + this.container.scrollTop - contentRect.top;
+            const startPercent = (relativeY / this.content.offsetHeight) * 100;
+            
+            this.tempEvent.style.top = `${startPercent}%`;
+            this.tempEvent.style.height = '0';
+            
+            this.eventsContainer.appendChild(this.tempEvent);
+        }
+    }
+
+    handleDragMove(e) {
+        if (!this.isDragging || !this.tempEvent) return;
+        
+        const contentRect = this.content.getBoundingClientRect();
+        const relativeY = e.clientY + this.container.scrollTop - contentRect.top;
+        const startY = Math.min(this.dragStartY, e.clientY) + this.container.scrollTop - contentRect.top;
+        const height = Math.abs(relativeY - (this.dragStartY + this.container.scrollTop - contentRect.top));
+        
+        // 更新临时事件的位置和大小
+        const startPercent = (startY / this.content.offsetHeight) * 100;
+        const heightPercent = (height / this.content.offsetHeight) * 100;
+        
+        this.tempEvent.style.top = `${startPercent}%`;
+        this.tempEvent.style.height = `${heightPercent}%`;
+        
+        // 显示时间提示
+        const startHour = (startPercent / 100) * 24;
+        const endHour = ((startPercent + heightPercent) / 100) * 24;
+        
+        const formatTime = (hour) => {
+            const h = Math.floor(hour);
+            const m = Math.floor((hour - h) * 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        };
+        
+        this.tempEvent.textContent = `${formatTime(startHour)} - ${formatTime(endHour)}`;
+    }
+
+    handleDragEnd(e) {
+        if (!this.isDragging || !this.tempEvent) return;
+        
+        const contentRect = this.content.getBoundingClientRect();
+        const startY = Math.min(this.dragStartY, e.clientY) + this.container.scrollTop - contentRect.top;
+        const endY = Math.max(this.dragStartY, e.clientY) + this.container.scrollTop - contentRect.top;
+        
+        // 计算时间
+        const startHour = (startY / this.content.offsetHeight) * 24;
+        const endHour = (endY / this.content.offsetHeight) * 24;
+        
+        const formatTime = (hour) => {
+            const h = Math.floor(hour);
+            const m = Math.floor((hour - h) * 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        };
+        
+        // 移除临时事件
+        this.tempEvent.remove();
+        this.tempEvent = null;
+        this.isDragging = false;
+        
+        // 如果拖拽时间太短，不创建事件
+        if (Math.abs(endHour - startHour) < 0.1) return;
+        
+        // 创建事件对话框
+        const name = prompt('请输入事件名称：');
+        if (name) {
+            const event = {
+                startTime: formatTime(startHour),
+                endTime: formatTime(endHour),
+                name: name,
+                color: '#' + Math.floor(Math.random()*16777215).toString(16) // 随机颜色
+            };
+            
+            try {
+                eventService.addEvent(event);
+            } catch (error) {
+                alert(error.message);
+            }
+        }
     }
 }
