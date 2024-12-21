@@ -317,6 +317,47 @@ export class Timeline {
         });
     }
 
+    // 创建错误提示对话框
+    createAlertDialog(message) {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'dialog alert-dialog';
+        
+        dialog.innerHTML = `
+            <div class="dialog-content">
+                <p>${message}</p>
+                <div class="dialog-buttons">
+                    <button class="confirm">确定</button>
+                </div>
+            </div>
+        `;
+        
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        // 处理确定按钮点击
+        const handleConfirm = () => {
+            document.body.removeChild(overlay);
+        };
+        
+        dialog.querySelector('.confirm').addEventListener('click', handleConfirm);
+        
+        // 处理回车键和ESC键
+        dialog.addEventListener('keydown', (e) => {
+            if ((e.key === 'Enter' || e.key === 'Escape') && !e.isComposing) {
+                e.preventDefault();
+                handleConfirm();
+            }
+        });
+        
+        // 自动聚焦到确定按钮
+        setTimeout(() => {
+            dialog.querySelector('.confirm').focus();
+        }, 0);
+    }
+
     // 编辑事件的方法
     editEvent(event, index) {
         this.createDialog('编辑事件', event.startTime, event.endTime, (name, color, dialogStartTime, dialogEndTime) => {
@@ -338,13 +379,13 @@ export class Timeline {
                     
                 } catch (error) {
                     console.error('更新事件失败:', error);
-                    alert(error.message);
+                    this.createAlertDialog(error.message);
                     // 如果更新失败，恢复原事件
                     try {
                         eventService.addEvent(event);
                     } catch (restoreError) {
                         console.error('恢复原事件失败:', restoreError);
-                        alert('更新失败，且无法恢复原事件，请刷新页面。');
+                        this.createAlertDialog('更新失败，且无法恢复原事件，请刷新页面。');
                     }
                 }
             }
@@ -674,7 +715,7 @@ export class Timeline {
                     eventService.addEvent(event);
                 } catch (error) {
                     console.error('添加事件失败:', error);
-                    alert(error.message);
+                    this.createAlertDialog(error.message);
                 }
             }
         });

@@ -588,4 +588,32 @@ body.dark-mode {
     display: flex;
     justify-content: center;
     gap: 10px;
+}
+
+.alert-dialog {
+    max-width: 300px;
+}
+
+.alert-dialog .dialog-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.alert-dialog p {
+    margin-bottom: 20px;
+    color: #dc3545;
+    font-size: 16px;
+}
+
+.dark-mode .alert-dialog p {
+    color: #ff6b6b;
+}
+
+.alert-dialog .dialog-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+.alert-dialog .confirm {
+    min-width: 100px;
 } 
