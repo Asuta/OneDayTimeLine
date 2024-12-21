@@ -313,7 +313,7 @@ export class Timeline {
     }
 
     // 创建自定义对话框
-    createDialog(title, callback) {
+    createDialog(title, initialStartTime, initialEndTime, callback) {
         const overlay = document.createElement('div');
         overlay.className = 'dialog-overlay';
         
@@ -328,25 +328,40 @@ export class Timeline {
         
         dialog.innerHTML = `
             <h3>${title}</h3>
-            <input type="text" placeholder="请输入事件名称" />
-            <div class="color-picker-grid">
-                ${savedColors.map((color, index) => `
-                    <div class="color-box" style="background-color: ${color}" data-color="${color}">
-                        <input type="color" value="${color}" />
-                    </div>
-                `).join('')}
-            </div>
-            <div class="dialog-buttons">
-                <button class="cancel">取消</button>
-                <button class="confirm">确定</button>
+            <div class="dialog-form">
+                <div class="form-group">
+                    <label>事件名称:</label>
+                    <input type="text" class="event-name" placeholder="请输入事件名称" />
+                </div>
+                <div class="form-group">
+                    <label>开始时间:</label>
+                    <input type="time" class="start-time" value="${initialStartTime}" />
+                </div>
+                <div class="form-group">
+                    <label>结束时间:</label>
+                    <input type="time" class="end-time" value="${initialEndTime}" />
+                </div>
+                <div class="color-picker-grid">
+                    ${savedColors.map((color, index) => `
+                        <div class="color-box" style="background-color: ${color}" data-color="${color}">
+                            <input type="color" value="${color}" />
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="dialog-buttons">
+                    <button class="cancel">取消</button>
+                    <button class="confirm">确定</button>
+                </div>
             </div>
         `;
         
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
         
-        const input = dialog.querySelector('input[type="text"]');
-        input.focus();
+        const nameInput = dialog.querySelector('.event-name');
+        const startTimeInput = dialog.querySelector('.start-time');
+        const endTimeInput = dialog.querySelector('.end-time');
+        nameInput.focus();
         
         let selectedColor = savedColors[0];
         const colorBoxes = dialog.querySelectorAll('.color-box');
@@ -389,9 +404,12 @@ export class Timeline {
         
         // 处理按钮点击
         dialog.querySelector('.confirm').addEventListener('click', () => {
-            const value = input.value.trim();
-            if (value) {
-                callback(value, selectedColor);
+            const name = nameInput.value.trim();
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+            
+            if (name && startTime && endTime) {
+                callback(name, selectedColor, startTime, endTime);
             }
             document.body.removeChild(overlay);
         });
@@ -402,11 +420,14 @@ export class Timeline {
         });
         
         // 处理按键事件
-        input.addEventListener('keyup', (e) => {
+        nameInput.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') {
-                const value = input.value.trim();
-                if (value) {
-                    callback(value, selectedColor);
+                const name = nameInput.value.trim();
+                const startTime = startTimeInput.value;
+                const endTime = endTimeInput.value;
+                
+                if (name && startTime && endTime) {
+                    callback(name, selectedColor, startTime, endTime);
                     document.body.removeChild(overlay);
                 }
             } else if (e.key === 'Escape') {
@@ -451,11 +472,11 @@ export class Timeline {
         const formattedEndTime = formatTime(endTime);
         
         // 使用自定义对话框
-        this.createDialog('新建事件', (name, color) => {
+        this.createDialog('新建事件', formattedStartTime, formattedEndTime, (name, color, startTime, endTime) => {
             if (name) {
                 const event = {
-                    startTime: formattedStartTime,
-                    endTime: formattedEndTime,
+                    startTime: startTime || formattedStartTime,
+                    endTime: endTime || formattedEndTime,
                     name,
                     color: color || '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
                 };
