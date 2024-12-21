@@ -1,7 +1,7 @@
 // 缩放相关常量
 export const MIN_ZOOM = 0.5;
 export const MAX_ZOOM = 10;
-export const ZOOM_STEP = 0.1;
+export const ZOOM_STEP = 0.5;
 export const SCROLL_ANIMATION_DURATION = 50; // 毫秒
 
 // 平滑滚动函数

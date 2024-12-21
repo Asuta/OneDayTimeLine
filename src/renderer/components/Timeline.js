@@ -231,7 +231,7 @@ export class Timeline {
             
             eventElement.style.top = `${startPercent}%`;
             eventElement.style.height = `${heightPercent}%`;
-            eventElement.textContent = event.name;
+            eventElement.textContent = `${event.name} (${event.startTime}-${event.endTime})`;
             this.eventsContainer.appendChild(eventElement);
         });
     }
