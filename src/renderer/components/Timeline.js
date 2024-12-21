@@ -297,6 +297,13 @@ export class Timeline {
             eventElement.style.top = `${startPercent}%`;
             eventElement.style.height = `${heightPercent}%`;
             
+            // 计算浪费时间的比例
+            if (event.wastedTime > 0) {
+                const totalMinutes = (endTime - startTime) * 60; // 将小时转换为分钟
+                const wastedPercent = (event.wastedTime / totalMinutes) * 100;
+                eventElement.style.setProperty('--wasted-percent', `${Math.min(100, wastedPercent)}%`);
+            }
+            
             // 创建事件内容容器
             const contentDiv = document.createElement('div');
             contentDiv.className = 'event-content';
@@ -696,7 +703,7 @@ export class Timeline {
         // 处理对话框内的所有按键事件
         dialog.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.isComposing) {
-                e.preventDefault(); // ���止表单提交
+                e.preventDefault(); // 止表单提交
                 handleConfirm();
             } else if (e.key === 'Escape') {
                 e.preventDefault();
