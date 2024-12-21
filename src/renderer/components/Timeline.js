@@ -223,6 +223,11 @@ export class Timeline {
             const endPercent = hourToPosition(timeToDecimal(event.endTime));
             const heightPercent = endPercent - startPercent;
             
+            // 如果事件时长小于30分钟，添加short类
+            if (timeToDecimal(event.endTime) - timeToDecimal(event.startTime) < 0.5) {
+                eventElement.classList.add('short');
+            }
+            
             console.log('事件位置计算:', {
                 event: event.name,
                 startTime: event.startTime,
@@ -304,6 +309,13 @@ export class Timeline {
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         };
         
+        // 如果事件时长小于30分钟，添加short类
+        if (Math.abs(endHour - startHour) < 0.5) {
+            this.tempEvent.classList.add('short');
+        } else {
+            this.tempEvent.classList.remove('short');
+        }
+        
         this.tempEvent.textContent = `${formatTime(startHour)} - ${formatTime(endHour)}`;
     }
 
@@ -315,9 +327,22 @@ export class Timeline {
         const dialog = document.createElement('div');
         dialog.className = 'dialog';
         
+        // 从localStorage加载保存的颜色，如果没有则使用默认颜色
+        const savedColors = JSON.parse(localStorage.getItem('predefinedColors')) || [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
+            '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB'
+        ];
+        
         dialog.innerHTML = `
             <h3>${title}</h3>
             <input type="text" placeholder="请输入事件名称" />
+            <div class="color-picker-grid">
+                ${savedColors.map((color, index) => `
+                    <div class="color-box" style="background-color: ${color}" data-color="${color}">
+                        <input type="color" value="${color}" />
+                    </div>
+                `).join('')}
+            </div>
             <div class="dialog-buttons">
                 <button class="cancel">取消</button>
                 <button class="confirm">确定</button>
@@ -327,14 +352,53 @@ export class Timeline {
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
         
-        const input = dialog.querySelector('input');
+        const input = dialog.querySelector('input[type="text"]');
         input.focus();
+        
+        let selectedColor = savedColors[0];
+        const colorBoxes = dialog.querySelectorAll('.color-box');
+        
+        // 设置第一个颜色为默认选中
+        colorBoxes[0].classList.add('selected');
+        
+        // 处理颜色选择
+        colorBoxes.forEach((box, index) => {
+            // 单击选择颜色
+            box.addEventListener('click', (e) => {
+                if (e.target.classList.contains('color-box')) {
+                    colorBoxes.forEach(b => b.classList.remove('selected'));
+                    box.classList.add('selected');
+                    selectedColor = box.dataset.color;
+                }
+            });
+            
+            // 双击显示颜色选择器
+            box.addEventListener('dblclick', () => {
+                const colorInput = box.querySelector('input[type="color"]');
+                colorInput.style.display = 'block';
+                colorInput.click();
+                
+                colorInput.addEventListener('change', (e) => {
+                    const newColor = e.target.value;
+                    box.style.backgroundColor = newColor;
+                    box.dataset.color = newColor;
+                    if (box.classList.contains('selected')) {
+                        selectedColor = newColor;
+                    }
+                    colorInput.style.display = 'none';
+                    
+                    // 保存更新后的颜色到localStorage
+                    savedColors[index] = newColor;
+                    localStorage.setItem('predefinedColors', JSON.stringify(savedColors));
+                });
+            });
+        });
         
         // 处理按钮点击
         dialog.querySelector('.confirm').addEventListener('click', () => {
             const value = input.value.trim();
             if (value) {
-                callback(value);
+                callback(value, selectedColor);
             }
             document.body.removeChild(overlay);
         });
@@ -349,7 +413,7 @@ export class Timeline {
             if (e.key === 'Enter') {
                 const value = input.value.trim();
                 if (value) {
-                    callback(value);
+                    callback(value, selectedColor);
                     document.body.removeChild(overlay);
                 }
             } else if (e.key === 'Escape') {
@@ -404,13 +468,13 @@ export class Timeline {
         });
         
         // 使用自定义对话框
-        this.createDialog('新建事件', (name) => {
+        this.createDialog('新建事件', (name, color) => {
             if (name) {
                 const event = {
                     startTime,
                     endTime,
                     name,
-                    color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
+                    color: color || '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
                 };
                 
                 console.log('添加事件:', event);
