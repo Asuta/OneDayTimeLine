@@ -118,6 +118,13 @@ class EventService {
         });
         this.saveEvents();
     }
+
+    // 清空所有事件
+    clearAllEvents() {
+        this.events = [];
+        console.log('清空所有事件');
+        this._notifyListeners();
+    }
 }
 
 // 导出单例实例

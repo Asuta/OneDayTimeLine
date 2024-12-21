@@ -616,4 +616,26 @@ body.dark-mode {
 
 .alert-dialog .confirm {
     min-width: 100px;
+}
+
+.event-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.clear-all-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.clear-all-btn:hover {
+    background-color: #c82333;
 } 

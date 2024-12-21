@@ -39,6 +39,28 @@ export class Timeline {
         if (this.isDarkMode) {
             document.body.classList.add('dark-mode');
         }
+
+        // 添加清空按钮
+        const eventList = document.querySelector('.event-list');
+        if (eventList) {
+            const header = document.createElement('div');
+            header.className = 'event-list-header';
+            header.innerHTML = `
+                <h2>事件列表</h2>
+                <button class="clear-all-btn">清空所有事件</button>
+            `;
+            
+            // 将header插入到eventList的最前面
+            eventList.insertBefore(header, eventList.firstChild);
+            
+            // 添加清空按钮的点击事件
+            const clearBtn = header.querySelector('.clear-all-btn');
+            clearBtn.addEventListener('click', () => {
+                this.createConfirmDialog('确定要清空所有事件吗？', () => {
+                    eventService.clearAllEvents();
+                });
+            });
+        }
     }
 
     initializeThemeToggle() {
