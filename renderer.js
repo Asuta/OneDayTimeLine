@@ -15,6 +15,31 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.1;
 
+// 在文件顶部添加
+const SCROLL_ANIMATION_DURATION = 50; // 毫秒
+
+// 平滑滚动函数
+function smoothScroll(element, target, duration) {
+    const start = element.scrollTop;
+    const change = target - start;
+    const startTime = performance.now();
+    
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // 使用 easeOutQuad 缓动函数使动画更自然
+        const easeProgress = 1 - (1 - progress) * (1 - progress);
+        element.scrollTop = start + change * easeProgress;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    
+    requestAnimationFrame(update);
+}
+
 // 初始化时间轴
 function initializeTimeline() {
     const timelineContainer = document.querySelector('.timeline-container');
@@ -69,7 +94,6 @@ function handleZoom(event) {
         // 计算鼠标位置对应的时间点（0-24小时）
         const currentScrollTop = timelineContainer.scrollTop;
         const mouseContentY = mouseY + currentScrollTop;
-        const currentTime = (mouseContentY / timelineContent.offsetHeight) * 24;
         
         // 确定滚动方向
         const delta = event.deltaY < 0 ? 1 : -1;
@@ -80,45 +104,43 @@ function handleZoom(event) {
             // 保存旧的高度和容器信息
             const containerHeight = rect.height;
             const oldHeight = timelineContent.offsetHeight;
-            const oldScrollTop = timelineContainer.scrollTop;
-            
-            // 更新缩放级别
-            zoomLevel = newZoom;
-            
-            // 计算新的总高度（基于容器高度和缩放级别）
-            const newHeight = containerHeight * zoomLevel;
-            
-            // 设置新的高度
-            timelineContent.style.height = `${newHeight}px`;
-            
-            log('高度变化:', {
-                oldHeight,
-                newHeight,
-                heightDiff: newHeight - oldHeight,
-                zoomLevel,
-                containerHeight
-            });
             
             // 计算鼠标位置在内容中的比例（0-1）
             const mouseRatio = mouseContentY / oldHeight;
             
+            // 更新缩放级别
+            zoomLevel = newZoom;
+            
+            // 计算新的总高度
+            const newHeight = containerHeight * zoomLevel;
+            
+            // 添加过渡效果
+            timelineContent.style.transition = `height ${SCROLL_ANIMATION_DURATION}ms ease-out`;
+            
+            // 设置新的高度
+            timelineContent.style.height = `${newHeight}px`;
+            
             // 计算新的滚动位置
             const newScrollTop = (mouseRatio * newHeight) - mouseY;
             
-            log('滚动位置计算:', {
+            log('缩放更新:', {
+                oldHeight,
+                newHeight,
                 mouseRatio,
-                oldScrollTop,
-                newScrollTop,
-                mouseY,
-                mouseContentY
+                oldScrollTop: currentScrollTop,
+                newScrollTop
             });
             
-            // 更新滚动位置
-            timelineContainer.scrollTop = newScrollTop;
+            // 平滑更新滚动位置
+            smoothScroll(timelineContainer, newScrollTop, SCROLL_ANIMATION_DURATION);
             
-            // 更新时间刻度和事件
-            updateTimelineHeight();
-            renderEvents();
+            // 在过渡结束后移除过渡效果并更新其他内容
+            setTimeout(() => {
+                timelineContent.style.transition = '';
+                // 更新时间刻度和事件
+                updateTimelineHeight();
+                renderEvents();
+            }, SCROLL_ANIMATION_DURATION);
         }
     }
 }
