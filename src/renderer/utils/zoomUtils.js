@@ -1,6 +1,6 @@
 // 缩放相关常量
-export const MIN_ZOOM = 1;
-export const MAX_ZOOM = 5;
+export const MIN_ZOOM = 0.5;
+export const MAX_ZOOM = 10;
 export const ZOOM_STEP = 0.1;
 export const SCROLL_ANIMATION_DURATION = 50; // 毫秒
 
