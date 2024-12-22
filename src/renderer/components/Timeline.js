@@ -332,9 +332,8 @@ export class Timeline {
             
             // 计算浪费时间的比例
             if (event.wastedTime > 0) {
-                const totalMinutes = (endTime - startTime) * 60; // 将小时转换为分钟
-                const wastedPercent = (event.wastedTime / totalMinutes) * 100;
-                eventElement.style.setProperty('--wasted-percent', `${Math.min(100, wastedPercent)}%`);
+                const wastedTimePercent = Math.round((event.wastedTime / ((endTime - startTime) * 60)) * 100);
+                eventElement.style.setProperty('--wasted-percent', `${Math.min(100, wastedTimePercent)}%`);
             }
             
             // 创建事件内容容器
@@ -357,7 +356,8 @@ export class Timeline {
             if (event.wastedTime > 0) {
                 const wastedTimeSpan = document.createElement('span');
                 wastedTimeSpan.className = 'wasted-time';
-                wastedTimeSpan.textContent = ` [浪费: ${event.wastedTime}分钟]`;
+                const wastedTimePercent = Math.round((event.wastedTime / ((endTime - startTime) * 60)) * 100);
+                wastedTimeSpan.textContent = ` [浪费: ${wastedTimePercent}%]`;
                 contentDiv.appendChild(wastedTimeSpan);
             }
             
@@ -430,6 +430,12 @@ export class Timeline {
 
     // 编辑事件的方法
     editEvent(event, index) {
+        // 计算浪费时间的百分比
+        const startTimeDecimal = timeToDecimal(event.startTime);
+        const endTimeDecimal = timeToDecimal(event.endTime);
+        const totalMinutes = (endTimeDecimal - startTimeDecimal) * 60;
+        const wastedTimePercent = Math.round((event.wastedTime / totalMinutes) * 100) || 0;
+
         this.createDialog('编辑事件', event.startTime, event.endTime, (name, color, dialogStartTime, dialogEndTime, wastedTime) => {
             if (name) {
                 const updatedEvent = {
@@ -460,7 +466,7 @@ export class Timeline {
                     }
                 }
             }
-        }, event.name, event.color, event.wastedTime || 0); // 传入默认名称、颜色和浪费时间
+        }, event.name, event.color, wastedTimePercent); // 传入百分比而不是分钟数
     }
 
     bindEvents() {
@@ -638,8 +644,8 @@ export class Timeline {
                     <input type="time" class="end-time" value="${initialEndTime}" />
                 </div>
                 <div class="form-group">
-                    <label>浪费的时间(分钟):</label>
-                    <input type="number" class="wasted-time" min="0" max="1440" value="${defaultWastedTime}" />
+                    <label>浪费的时间(%):</label>
+                    <input type="number" class="wasted-time" min="0" max="100" value="${defaultWastedTime}" />
                 </div>
                 <div class="color-picker-grid">
                     ${savedColors.map((color, index) => `
@@ -710,7 +716,13 @@ export class Timeline {
             const wastedTime = parseInt(wastedTimeInput.value) || 0;
             
             if (name && startTime && endTime) {
-                callback(name, selectedColor, startTime, endTime, wastedTime);
+                // 计算实际浪费的分钟数
+                const startTimeDecimal = timeToDecimal(startTime);
+                const endTimeDecimal = timeToDecimal(endTime);
+                const totalMinutes = (endTimeDecimal - startTimeDecimal) * 60;
+                const actualWastedMinutes = Math.round((wastedTime / 100) * totalMinutes);
+                
+                callback(name, selectedColor, startTime, endTime, actualWastedMinutes);
                 document.body.removeChild(overlay);
             } else {
                 // 如果缺少必要信息，聚焦到第一个空的输入框
