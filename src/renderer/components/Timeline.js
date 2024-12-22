@@ -357,7 +357,7 @@ export class Timeline {
                 const wastedTimeSpan = document.createElement('span');
                 wastedTimeSpan.className = 'wasted-time';
                 const wastedTimePercent = Math.round((event.wastedTime / ((endTime - startTime) * 60)) * 100);
-                wastedTimeSpan.textContent = ` [浪费: ${wastedTimePercent}%]`;
+                wastedTimeSpan.textContent = ` [浪费: ${wastedTimePercent}%(${event.wastedTime}分钟)]`;
                 contentDiv.appendChild(wastedTimeSpan);
             }
             
@@ -629,6 +629,17 @@ export class Timeline {
         }
         
         dialog.innerHTML = `
+            <style>
+                .wasted-time-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .wasted-minutes-display {
+                    color: #666;
+                    font-size: 0.9em;
+                }
+            </style>
             <h3>${title}</h3>
             <div class="dialog-form">
                 <div class="form-group">
@@ -645,7 +656,10 @@ export class Timeline {
                 </div>
                 <div class="form-group">
                     <label>浪费的时间(%):</label>
-                    <input type="number" class="wasted-time" min="0" max="100" value="${defaultWastedTime}" />
+                    <div class="wasted-time-container">
+                        <input type="number" class="wasted-time" min="0" max="100" value="${defaultWastedTime}" />
+                        <span class="wasted-minutes-display"></span>
+                    </div>
                 </div>
                 <div class="color-picker-grid">
                     ${savedColors.map((color, index) => `
@@ -670,6 +684,7 @@ export class Timeline {
         const startTimeInput = dialog.querySelector('.start-time');
         const endTimeInput = dialog.querySelector('.end-time');
         const wastedTimeInput = dialog.querySelector('.wasted-time');
+        const wastedMinutesDisplay = dialog.querySelector('.wasted-minutes-display');
         nameInput.focus();
         
         let selectedColor = savedColors[selectedColorIndex];
@@ -707,6 +722,24 @@ export class Timeline {
                 });
             });
         });
+        
+        // 计算并显示浪费的分钟数
+        const updateWastedMinutes = () => {
+            const startTimeDecimal = timeToDecimal(startTimeInput.value);
+            const endTimeDecimal = timeToDecimal(endTimeInput.value);
+            const totalMinutes = (endTimeDecimal - startTimeDecimal) * 60;
+            const wastedPercent = parseInt(wastedTimeInput.value) || 0;
+            const wastedMinutes = Math.round((wastedPercent / 100) * totalMinutes);
+            wastedMinutesDisplay.textContent = `(${wastedMinutes}分钟)`;
+        };
+
+        // 添加事件监听器
+        wastedTimeInput.addEventListener('input', updateWastedMinutes);
+        startTimeInput.addEventListener('change', updateWastedMinutes);
+        endTimeInput.addEventListener('change', updateWastedMinutes);
+
+        // 初始化显示
+        updateWastedMinutes();
         
         // 处理确认操作
         const handleConfirm = () => {
