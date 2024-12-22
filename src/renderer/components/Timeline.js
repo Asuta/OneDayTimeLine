@@ -1,5 +1,5 @@
 import { hourToPosition, timeToDecimal } from '../utils/timeUtils.js';
-import { smoothScroll, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP, SCROLL_ANIMATION_DURATION } from '../utils/zoomUtils.js';
+import { MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from '../utils/zoomUtils.js';
 import { eventService } from '../services/eventService.js';
 
 export class Timeline {
@@ -181,6 +181,30 @@ export class Timeline {
         }
     }
 
+    // 添加动画辅助函数
+    animate(startValue, endValue, duration, onUpdate, onComplete) {
+        const startTime = performance.now();
+        
+        const tick = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // 使用easeOutQuad缓动函数使动画更自然
+            const easeProgress = 1 - (1 - progress) * (1 - progress);
+            
+            const currentValue = startValue + (endValue - startValue) * easeProgress;
+            onUpdate(currentValue);
+            
+            if (progress < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                if (onComplete) onComplete();
+            }
+        };
+        
+        requestAnimationFrame(tick);
+    }
+
     handleZoom(event) {
         if (event.ctrlKey) {
             event.preventDefault();
@@ -189,46 +213,55 @@ export class Timeline {
             const rect = this.container.getBoundingClientRect();
             const mouseY = event.clientY - rect.top;
             
-            // 计算鼠标位置对应的时间点
-            const currentScrollTop = this.container.scrollTop;
-            const mouseContentY = mouseY + currentScrollTop;
+            // 计算鼠标位置对应的时间点的比例
+            const mouseRatio = (mouseY + this.container.scrollTop) / this.content.offsetHeight;
             
             // 确定滚动方向
             const delta = event.deltaY < 0 ? 1 : -1;
             const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.zoomLevel + (delta * ZOOM_STEP)));
             
             if (newZoom !== this.zoomLevel) {
-                // 保存旧的高度和容器信息
-                const containerHeight = rect.height;
-                const oldHeight = this.content.offsetHeight;
+                // 移除任何可能存在的过渡效果
+                this.content.style.transition = 'none';
                 
-                // 计算鼠标位置在内容中的比例
-                const mouseRatio = mouseContentY / oldHeight;
+                // 保存当前状态
+                const startHeight = this.content.offsetHeight;
+                const startScrollTop = this.container.scrollTop;
+                const endHeight = this.container.offsetHeight * newZoom;
+                const endScrollTop = (mouseRatio * endHeight) - mouseY;
                 
                 // 更新缩放级别
                 this.zoomLevel = newZoom;
                 
-                // 计算新的总高度
-                const newHeight = containerHeight * this.zoomLevel;
+                // 使用requestAnimationFrame实现平滑动画
+                let animationStartTime = null;
+                const duration = 150; // 动画持续时间（毫秒）
                 
-                // 添加过渡效果
-                this.content.style.transition = `height ${SCROLL_ANIMATION_DURATION}ms ease-out`;
+                const animate = (currentTime) => {
+                    if (!animationStartTime) animationStartTime = currentTime;
+                    const elapsed = currentTime - animationStartTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // 使用easeOutQuad缓动函数
+                    const easeProgress = 1 - Math.pow(1 - progress, 2);
+                    
+                    // 同步更新高度和滚动位置
+                    const currentHeight = startHeight + (endHeight - startHeight) * easeProgress;
+                    const currentScrollTop = startScrollTop + (endScrollTop - startScrollTop) * easeProgress;
+                    
+                    this.content.style.height = `${currentHeight}px`;
+                    this.container.scrollTop = currentScrollTop;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        // 动画完成后更新时间轴和事件
+                        this.updateTimelineHeight();
+                        this.renderEvents();
+                    }
+                };
                 
-                // 设置新的高度
-                this.content.style.height = `${newHeight}px`;
-                
-                // 计算新的滚动位置
-                const newScrollTop = (mouseRatio * newHeight) - mouseY;
-                
-                // 平滑更新滚动位置
-                smoothScroll(this.container, newScrollTop, SCROLL_ANIMATION_DURATION);
-                
-                // 在过渡结束后移除过渡效果并更新其他内容
-                setTimeout(() => {
-                    this.content.style.transition = '';
-                    this.updateTimelineHeight();
-                    this.renderEvents();
-                }, SCROLL_ANIMATION_DURATION);
+                requestAnimationFrame(animate);
             }
         }
     }
