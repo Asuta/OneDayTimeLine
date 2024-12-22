@@ -1,10 +1,15 @@
 import { timeToDecimal } from '../utils/timeUtils.js';
+const fs = require('fs');
+const path = require('path');
+const { app } = require('@electron/remote');
 
 class EventService {
     constructor() {
         this.events = [];
         this.listeners = new Set();
-        console.log('EventService 初始化');
+        // 获取用户数据目录
+        this.dataPath = path.join(app.getPath('userData'), 'events.json');
+        console.log('EventService 初始化, 数据文件路径:', this.dataPath);
     }
 
     // 添加事件
@@ -73,24 +78,33 @@ class EventService {
         return [...this.events];
     }
 
-    // 保存事件到本地存储
+    // 保存事件到JSON文件
     saveEvents() {
-        console.log('保存事件到本地存储');
-        localStorage.setItem('timelineEvents', JSON.stringify(this.events));
+        console.log('保存事件到文件:', this.dataPath);
+        try {
+            fs.writeFileSync(this.dataPath, JSON.stringify(this.events, null, 2), 'utf8');
+            console.log('事件保存成功');
+        } catch (error) {
+            console.error('保存事件失败:', error);
+        }
     }
 
-    // 从本地存储加载事件
+    // 从JSON文件加载事件
     loadEvents() {
-        console.log('从本地存储加载事件');
-        const savedEvents = localStorage.getItem('timelineEvents');
-        if (savedEvents) {
-            try {
-                this.events = JSON.parse(savedEvents);
+        console.log('从文件加载事件:', this.dataPath);
+        try {
+            if (fs.existsSync(this.dataPath)) {
+                const data = fs.readFileSync(this.dataPath, 'utf8');
+                this.events = JSON.parse(data);
                 console.log('加载的事件:', this.events);
                 this._notifyListeners();
-            } catch (error) {
-                console.error('加载事件失败:', error);
+            } else {
+                console.log('数据文件不存在，使用空数组');
+                this.events = [];
             }
+        } catch (error) {
+            console.error('加载事件失败:', error);
+            this.events = [];
         }
     }
 

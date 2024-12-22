@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain } = require('electron')
 const path = require('path')
+require('@electron/remote/main').initialize()
 
 let tray = null
 let mainWindow = null
@@ -21,6 +22,8 @@ function createWindow () {
     }
   })
 
+  require('@electron/remote/main').enable(mainWindow.webContents)
+  
   mainWindow.loadFile('index.html')
 
   // 当点击关闭按钮时触发close事件
