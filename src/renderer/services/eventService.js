@@ -2,14 +2,114 @@ import { timeToDecimal } from '../utils/timeUtils.js';
 const fs = require('fs');
 const path = require('path');
 const { app } = require('@electron/remote');
+const { ipcRenderer } = require('electron');
 
 class EventService {
     constructor() {
         this.events = [];
         this.listeners = new Set();
-        // 获取用户数据目录
-        this.dataPath = path.join(app.getPath('userData'), 'events.json');
+        
+        // 从localStorage获取自定义存储路径，如果没有则使用默认路径
+        const storagePath = localStorage.getItem('storagePath');
+        this.dataPath = storagePath ? 
+            path.join(storagePath, 'events.json') : 
+            path.join(app.getPath('userData'), 'events.json');
+            
         console.log('EventService 初始化, 数据文件路径:', this.dataPath);
+        
+        // 监听存储路径变更
+        ipcRenderer.on('set-storage-path', (event, newPath) => {
+            this.setStoragePath(newPath);
+        });
+        
+        // 监听数据导入
+        ipcRenderer.on('import-data', (event, filePath) => {
+            this.importData(filePath);
+        });
+        
+        // 监听数据导出
+        ipcRenderer.on('export-data', (event, filePath) => {
+            this.exportData(filePath);
+        });
+    }
+    
+    // 设置新的存储路径
+    setStoragePath(newPath) {
+        try {
+            // 更新存储路径
+            const newDataPath = path.join(newPath, 'events.json');
+            
+            // 检查新路径下是否存在数据文件
+            if (fs.existsSync(newDataPath)) {
+                // 如果存在，读取新路径的数据
+                const data = fs.readFileSync(newDataPath, 'utf8');
+                try {
+                    const newEvents = JSON.parse(data);
+                    // 验证数据格式
+                    if (Array.isArray(newEvents)) {
+                        // 更新路径和数据
+                        this.dataPath = newDataPath;
+                        localStorage.setItem('storagePath', newPath);
+                        this.events = newEvents;
+                        this._notifyListeners();
+                        console.log('从新路径加载数据成功:', this.dataPath);
+                    } else {
+                        throw new Error('新路径下的数据格式不正确');
+                    }
+                } catch (parseError) {
+                    throw new Error('新路径下的数据文件格式无效');
+                }
+            } else {
+                // 如果不存在，清空当前数据并更新路径
+                this.dataPath = newDataPath;
+                localStorage.setItem('storagePath', newPath);
+                this.events = [];
+                this._notifyListeners();
+                console.log('新路径下无数据，已清空事件列表:', this.dataPath);
+            }
+        } catch (error) {
+            console.error('切换存储路径失败:', error);
+            throw new Error('切换存储路径失败: ' + error.message);
+        }
+    }
+    
+    // 导入数据
+    importData(filePath) {
+        try {
+            const data = fs.readFileSync(filePath, 'utf8');
+            const importedEvents = JSON.parse(data);
+            
+            // 验证导入的数据
+            if (!Array.isArray(importedEvents)) {
+                throw new Error('导入的数据格式不正确');
+            }
+            
+            // 检查每个事件的格式
+            importedEvents.forEach(event => {
+                if (!event.startTime || !event.endTime || !event.name) {
+                    throw new Error('导入的数据缺少必要字段');
+                }
+            });
+            
+            // 更新事件列表
+            this.events = importedEvents;
+            this._notifyListeners();
+            console.log('数据导入成功');
+        } catch (error) {
+            console.error('导入数据失败:', error);
+            throw new Error('导入数据失败: ' + error.message);
+        }
+    }
+    
+    // 导出数据
+    exportData(filePath) {
+        try {
+            fs.writeFileSync(filePath, JSON.stringify(this.events, null, 2), 'utf8');
+            console.log('数据导出成功');
+        } catch (error) {
+            console.error('导出数据失败:', error);
+            throw new Error('导出数据失败: ' + error.message);
+        }
     }
 
     // 添加事件
@@ -53,7 +153,7 @@ class EventService {
             }
             return conflict;
         });
-        
+
         if (hasConflict) {
             console.error('时间冲突验证失败');
             throw new Error('该时间段与现有事件冲突！');
@@ -82,6 +182,12 @@ class EventService {
     saveEvents() {
         console.log('保存事件到文件:', this.dataPath);
         try {
+            // 确保目录存在
+            const dir = path.dirname(this.dataPath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+            
             fs.writeFileSync(this.dataPath, JSON.stringify(this.events, null, 2), 'utf8');
             console.log('事件保存成功');
         } catch (error) {

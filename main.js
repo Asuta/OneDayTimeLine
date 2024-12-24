@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain } = require('electron')
+const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron')
 const path = require('path')
 require('@electron/remote/main').initialize()
 
@@ -49,6 +49,116 @@ if (!gotTheLock) {
             }
             return false
         })
+
+        // 创建应用程序菜单
+        const template = [
+            {
+                label: '文件',
+                submenu: [
+                    {
+                        label: '导入数据',
+                        click: async () => {
+                            const result = await dialog.showOpenDialog(mainWindow, {
+                                properties: ['openFile'],
+                                filters: [
+                                    { name: 'JSON Files', extensions: ['json'] }
+                                ]
+                            });
+                            if (!result.canceled) {
+                                mainWindow.webContents.send('import-data', result.filePaths[0]);
+                            }
+                        }
+                    },
+                    {
+                        label: '导出数据',
+                        click: async () => {
+                            const result = await dialog.showSaveDialog(mainWindow, {
+                                defaultPath: path.join(app.getPath('documents'), 'events.json'),
+                                filters: [
+                                    { name: 'JSON Files', extensions: ['json'] }
+                                ]
+                            });
+                            if (!result.canceled) {
+                                mainWindow.webContents.send('export-data', result.filePath);
+                            }
+                        }
+                    },
+                    { type: 'separator' },
+                    {
+                        label: '退出',
+                        click: () => {
+                            app.isQuiting = true;
+                            app.quit();
+                        }
+                    }
+                ]
+            },
+            {
+                label: '编辑',
+                submenu: [
+                    { role: 'undo', label: '撤销' },
+                    { role: 'redo', label: '重做' },
+                    { type: 'separator' },
+                    { role: 'cut', label: '剪切' },
+                    { role: 'copy', label: '复制' },
+                    { role: 'paste', label: '粘贴' },
+                    { role: 'delete', label: '删除' },
+                    { type: 'separator' },
+                    { role: 'selectAll', label: '全选' }
+                ]
+            },
+            {
+                label: '视图',
+                submenu: [
+                    { role: 'reload', label: '重新加载' },
+                    { role: 'forceReload', label: '强制重新加载' },
+                    { role: 'toggleDevTools', label: '开发者工具' },
+                    { type: 'separator' },
+                    { role: 'resetZoom', label: '实际大小' },
+                    { role: 'zoomIn', label: '放大' },
+                    { role: 'zoomOut', label: '缩小' },
+                    { type: 'separator' },
+                    { role: 'togglefullscreen', label: '切换全屏' }
+                ]
+            },
+            {
+                label: '设置',
+                submenu: [
+                    {
+                        label: '数据存储位置',
+                        click: async () => {
+                            const result = await dialog.showOpenDialog(mainWindow, {
+                                properties: ['openDirectory']
+                            });
+                            if (!result.canceled) {
+                                mainWindow.webContents.send('set-storage-path', result.filePaths[0]);
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                label: '帮助',
+                submenu: [
+                    {
+                        label: '关于',
+                        click: async () => {
+                            const options = {
+                                type: 'info',
+                                buttons: ['确定'],
+                                title: '关于',
+                                message: '时间轴记录应用',
+                                detail: '版本 1.0.0\n一个用于记录和管理每日时间安排的应用程序。'
+                            };
+                            await dialog.showMessageBox(mainWindow, options);
+                        }
+                    }
+                ]
+            }
+        ];
+
+        const menu = Menu.buildFromTemplate(template);
+        Menu.setApplicationMenu(menu);
     }
 
     function createTray() {
