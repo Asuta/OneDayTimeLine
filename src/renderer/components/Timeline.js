@@ -77,6 +77,138 @@ export class Timeline {
             themeToggle.innerHTML = `<i>${this.isDarkMode ? '☀️' : '🌙'}</i>`;
             localStorage.setItem('darkMode', this.isDarkMode);
         });
+
+        // 创建日期选择按钮
+        const datePickerButton = document.createElement('button');
+        datePickerButton.className = 'date-picker-toggle';
+        datePickerButton.innerHTML = `<i>📅</i>`;
+        document.body.appendChild(datePickerButton);
+
+        // 添加点击事件
+        datePickerButton.addEventListener('click', () => {
+            this.showDatePicker();
+        });
+    }
+
+    // 显示日期选择器
+    showDatePicker() {
+        const currentDate = new Date();
+        this.createDatePickerDialog(currentDate);
+    }
+
+    // 创建日期选择器对话框
+    createDatePickerDialog(date) {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'dialog date-picker-dialog';
+        
+        // 获取当前年月
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        
+        dialog.innerHTML = `
+            <div class="date-picker-header">
+                <div class="month-selector">
+                    <button class="prev-month">◀</button>
+                    <span class="current-month">${year}年${month + 1}月</span>
+                    <button class="next-month">▶</button>
+                </div>
+            </div>
+            <div class="calendar-grid">
+                <div class="weekday-header">
+                    <div>日</div>
+                    <div>一</div>
+                    <div>二</div>
+                    <div>三</div>
+                    <div>四</div>
+                    <div>五</div>
+                    <div>六</div>
+                </div>
+                <div class="days-grid">
+                    ${this.generateCalendarDays(year, month)}
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="cancel">关闭</button>
+            </div>
+        `;
+        
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        // 添加事件监听
+        const prevMonthBtn = dialog.querySelector('.prev-month');
+        const nextMonthBtn = dialog.querySelector('.next-month');
+        const cancelBtn = dialog.querySelector('.cancel');
+        
+        prevMonthBtn.addEventListener('click', () => {
+            const newDate = new Date(year, month - 1, 1);
+            document.body.removeChild(overlay);
+            this.createDatePickerDialog(newDate);
+        });
+        
+        nextMonthBtn.addEventListener('click', () => {
+            const newDate = new Date(year, month + 1, 1);
+            document.body.removeChild(overlay);
+            this.createDatePickerDialog(newDate);
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+        
+        // 为每个日期添加点击事件
+        const dayButtons = dialog.querySelectorAll('.calendar-day');
+        dayButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const selectedDate = button.getAttribute('data-date');
+                console.log('选择的日期:', selectedDate);
+                // 这里后续添加日期选择的处理逻辑
+            });
+        });
+        
+        // ESC键关闭对话框
+        document.addEventListener('keyup', function handleEsc(e) {
+            if (e.key === 'Escape') {
+                document.body.removeChild(overlay);
+                document.removeEventListener('keyup', handleEsc);
+            }
+        });
+    }
+    
+    // 生成日历天数
+    generateCalendarDays(year, month) {
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDay = firstDay.getDay();
+        const totalDays = lastDay.getDate();
+        
+        let html = '';
+        let dayCount = 1;
+        
+        // 生成6行7列的日历网格
+        for (let i = 0; i < 6; i++) {
+            html += '<div class="calendar-row">';
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < startDay || dayCount > totalDays) {
+                    html += '<div class="calendar-day empty"></div>';
+                } else if (dayCount <= totalDays) {
+                    const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCount).padStart(2, '0')}`;
+                    html += `
+                        <div class="calendar-day" data-date="${date}">
+                            <span class="day-number">${dayCount}</span>
+                        </div>
+                    `;
+                    dayCount++;
+                }
+            }
+            html += '</div>';
+            if (dayCount > totalDays) break;
+        }
+        
+        return html;
     }
 
     initializeTimeTooltip() {
