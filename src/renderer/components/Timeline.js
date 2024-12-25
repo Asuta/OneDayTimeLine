@@ -188,11 +188,12 @@ export class Timeline {
         let html = '';
         let dayCount = 1;
         
-        // 生成6行7列的日历网格
+        // 始终生成6行7列的日历网格
         for (let i = 0; i < 6; i++) {
             html += '<div class="calendar-row">';
             for (let j = 0; j < 7; j++) {
-                if (i === 0 && j < startDay || dayCount > totalDays) {
+                if ((i === 0 && j < startDay) || dayCount > totalDays) {
+                    // 添加空白格子
                     html += '<div class="calendar-day empty"></div>';
                 } else if (dayCount <= totalDays) {
                     const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCount).padStart(2, '0')}`;
@@ -205,7 +206,6 @@ export class Timeline {
                 }
             }
             html += '</div>';
-            if (dayCount > totalDays) break;
         }
         
         return html;

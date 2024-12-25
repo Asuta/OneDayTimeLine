@@ -715,7 +715,8 @@ body.dark-mode {
 /* 日期选择器对话框样式 */
 .date-picker-dialog {
     width: 320px;
-    padding: 15px;
+    padding: 20px;
+    min-height: 400px;
 }
 
 .date-picker-header {
@@ -726,7 +727,7 @@ body.dark-mode {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 10px;
+    margin-bottom: 20px;
 }
 
 .month-selector button {
@@ -734,7 +735,7 @@ body.dark-mode {
     border: none;
     color: #007bff;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 5px;
     font-size: 16px;
     width: auto;
 }
@@ -751,35 +752,44 @@ body.dark-mode {
 
 .calendar-grid {
     margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .weekday-header {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, 38px);
+    gap: 8px;
     text-align: center;
     font-weight: 500;
     margin-bottom: 10px;
+    width: fit-content;
 }
 
 .weekday-header div {
-    padding: 5px;
     color: #666;
+    font-size: 14px;
+    height: 38px;
+    line-height: 38px;
 }
 
 .days-grid {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
+    min-height: 280px;
+    width: fit-content;
 }
 
 .calendar-row {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(7, 38px);
+    gap: 8px;
+    height: 38px;
 }
 
 .calendar-day {
-    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -788,6 +798,8 @@ body.dark-mode {
     position: relative;
     background-color: #f8f9fa;
     transition: all 0.2s ease;
+    height: 38px;
+    width: 38px;
 }
 
 .calendar-day:not(.empty):hover {
@@ -802,6 +814,9 @@ body.dark-mode {
 .calendar-day .day-number {
     font-size: 14px;
     color: #333;
+    line-height: 38px;
+    text-align: center;
+    width: 100%;
 }
 
 .calendar-day:not(.empty):hover .day-number {
