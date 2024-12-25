@@ -823,6 +823,50 @@ body.dark-mode {
     color: #007bff;
 }
 
+/* 有事件的日期样式 */
+.calendar-day.has-events {
+    background-color: #e3f2fd;
+    border: 1px solid #90caf9;
+}
+
+.calendar-day.has-events .day-number {
+    color: #1976d2;
+    font-weight: 500;
+}
+
+/* 当前选中日期的样式 */
+.calendar-day.current-date {
+    background-color: #007bff;
+    border: none;
+}
+
+.calendar-day.current-date .day-number {
+    color: white;
+    font-weight: 500;
+}
+
+.calendar-day.current-date:hover {
+    background-color: #0056b3;
+}
+
+/* 深色模式样式 */
+.dark-mode .calendar-day.has-events {
+    background-color: #1a237e;
+    border: 1px solid #3949ab;
+}
+
+.dark-mode .calendar-day.has-events .day-number {
+    color: #90caf9;
+}
+
+.dark-mode .calendar-day.current-date {
+    background-color: #3498db;
+}
+
+.dark-mode .calendar-day.current-date:hover {
+    background-color: #2980b9;
+}
+
 /* 深色模式样式 */
 .dark-mode .date-picker-dialog {
     background-color: #2d2d2d;

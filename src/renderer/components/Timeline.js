@@ -9,6 +9,8 @@ export class Timeline {
         this.content = document.getElementById('timeline-content');
         this.eventsContainer = document.getElementById('events');
         this.isDarkMode = localStorage.getItem('darkMode') === 'true';
+        this.currentDate = new Date();  // 添加当前日期状态
+        this.formatDate(this.currentDate);  // 格式化当前日期
         
         // 短事件的时间阈值（小时）
         this.shortEventThreshold = 0.01; // 15分钟，您可以根据需要调整这个值
@@ -22,6 +24,9 @@ export class Timeline {
         this.bindEvents();
         this.initializeThemeToggle();
         this.initializeTimeTooltip();
+        
+        // 加载当前日期的事件
+        this.loadEventsForDate(this.formatDate(this.currentDate));
     }
 
     initialize() {
@@ -162,11 +167,15 @@ export class Timeline {
         // 为每个日期添加点击事件
         const dayButtons = dialog.querySelectorAll('.calendar-day');
         dayButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const selectedDate = button.getAttribute('data-date');
-                console.log('选择的日期:', selectedDate);
-                // 这里后续添加日期选择的处理逻辑
-            });
+            if (!button.classList.contains('empty')) {
+                button.addEventListener('click', () => {
+                    const selectedDate = button.getAttribute('data-date');
+                    console.log('选择的日期:', selectedDate);
+                    this.currentDate = new Date(selectedDate);
+                    this.loadEventsForDate(selectedDate);
+                    document.body.removeChild(overlay);
+                });
+            }
         });
         
         // ESC键关闭对话框
@@ -197,8 +206,11 @@ export class Timeline {
                     html += '<div class="calendar-day empty"></div>';
                 } else if (dayCount <= totalDays) {
                     const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCount).padStart(2, '0')}`;
+                    const hasEvents = eventService.getEventsByDate(date).length > 0;
+                    const isCurrentDate = date === this.formatDate(this.currentDate);
+                    
                     html += `
-                        <div class="calendar-day" data-date="${date}">
+                        <div class="calendar-day${hasEvents ? ' has-events' : ''}${isCurrentDate ? ' current-date' : ''}" data-date="${date}">
                             <span class="day-number">${dayCount}</span>
                         </div>
                     `;
@@ -583,7 +595,7 @@ export class Timeline {
                     // 先从eventService中删除原事件
                     eventService.deleteEvent(index);
                     
-                    // 再添加更新后的事件
+                    // 再添加更新后的事���
                     eventService.addEvent(updatedEvent);
                     
                 } catch (error) {
@@ -978,5 +990,122 @@ export class Timeline {
                 }
             }
         }, '', null, 0);
+    }
+
+    // 格式化日期为 YYYY-MM-DD 格式
+    formatDate(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    // 加载指定日期的事件
+    loadEventsForDate(date) {
+        const events = eventService.getEventsByDate(date);
+        this.displayEvents(events);
+    }
+
+    // 显示事件列表
+    displayEvents(events) {
+        // 清空现有事件
+        const eventsContainer = document.querySelector('.events');
+        eventsContainer.innerHTML = '';
+        
+        // 清空事件列表
+        const eventList = document.querySelector('.event-list');
+        const eventListContent = eventList.querySelector('.event-items');
+        if (eventListContent) {
+            eventListContent.innerHTML = '';
+        }
+
+        // 显示新的事件
+        events.forEach((event, index) => {
+            this.createEventElement(event, index);
+            this.createEventListItem(event, index);
+        });
+    }
+
+    // 创建日期选择器对话框
+    createDatePickerDialog(date) {
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'dialog date-picker-dialog';
+        
+        // 获取当前年月
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        
+        dialog.innerHTML = `
+            <div class="date-picker-header">
+                <div class="month-selector">
+                    <button class="prev-month">◀</button>
+                    <span class="current-month">${year}年${month + 1}月</span>
+                    <button class="next-month">▶</button>
+                </div>
+            </div>
+            <div class="calendar-grid">
+                <div class="weekday-header">
+                    <div>日</div>
+                    <div>一</div>
+                    <div>二</div>
+                    <div>三</div>
+                    <div>四</div>
+                    <div>五</div>
+                    <div>六</div>
+                </div>
+                <div class="days-grid">
+                    ${this.generateCalendarDays(year, month)}
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="cancel">关闭</button>
+            </div>
+        `;
+        
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        // 添加事件监听
+        const prevMonthBtn = dialog.querySelector('.prev-month');
+        const nextMonthBtn = dialog.querySelector('.next-month');
+        const cancelBtn = dialog.querySelector('.cancel');
+        
+        prevMonthBtn.addEventListener('click', () => {
+            const newDate = new Date(year, month - 1, 1);
+            document.body.removeChild(overlay);
+            this.createDatePickerDialog(newDate);
+        });
+        
+        nextMonthBtn.addEventListener('click', () => {
+            const newDate = new Date(year, month + 1, 1);
+            document.body.removeChild(overlay);
+            this.createDatePickerDialog(newDate);
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+        
+        // 为每个日期添加点击事件
+        const dayButtons = dialog.querySelectorAll('.calendar-day');
+        dayButtons.forEach(button => {
+            if (!button.classList.contains('empty')) {
+                button.addEventListener('click', () => {
+                    const selectedDate = button.getAttribute('data-date');
+                    console.log('选择的日期:', selectedDate);
+                    this.currentDate = new Date(selectedDate);
+                    this.loadEventsForDate(selectedDate);
+                    document.body.removeChild(overlay);
+                });
+            }
+        });
+        
+        // ESC键关闭对话框
+        document.addEventListener('keyup', function handleEsc(e) {
+            if (e.key === 'Escape') {
+                document.body.removeChild(overlay);
+                document.removeEventListener('keyup', handleEsc);
+            }
+        });
     }
 }
