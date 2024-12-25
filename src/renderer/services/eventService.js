@@ -86,7 +86,7 @@ class EventService {
             
             // 检查每个事件的格式
             importedEvents.forEach(event => {
-                if (!event.startTime || !event.endTime || !event.name) {
+                if (!event.startTime || !event.endTime || !event.name || !event.date) {
                     throw new Error('导入的数据缺少必要字段');
                 }
             });
@@ -131,11 +131,20 @@ class EventService {
             console.error('时间验证失败: 结束时间必须晚于开始时间');
             throw new Error('结束时间必须晚于开始时间！');
         }
+
+        // 获取当前日期
+        const today = new Date();
+        const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         
         // 检查时间冲突
         const hasConflict = this.events.some((existingEvent, index) => {
             // 如果是被排除的索引，跳过冲突检查
             if (index === excludeIndex) {
+                return false;
+            }
+            
+            // 只检查同一天的事件
+            if (existingEvent.date !== date) {
                 return false;
             }
             
@@ -159,8 +168,21 @@ class EventService {
             throw new Error('该时间段与现有事件冲突！');
         }
 
-        this.events.push(event);
-        this.events.sort((a, b) => timeToDecimal(a.startTime) - timeToDecimal(b.startTime));
+        // 添加日期字段到事件对象
+        const eventWithDate = {
+            ...event,
+            date: date
+        };
+
+        this.events.push(eventWithDate);
+        // 按日期和开始时间排序
+        this.events.sort((a, b) => {
+            if (a.date !== b.date) {
+                return a.date.localeCompare(b.date);
+            }
+            return timeToDecimal(a.startTime) - timeToDecimal(b.startTime);
+        });
+        
         console.log('事件添加成功，当前事件列表:', this.events);
         this._notifyListeners();
     }
@@ -176,6 +198,11 @@ class EventService {
     // 获取所有事件
     getAllEvents() {
         return [...this.events];
+    }
+
+    // 获取指定日期的事件
+    getEventsByDate(date) {
+        return this.events.filter(event => event.date === date);
     }
 
     // 保存事件到JSON文件
