@@ -24,7 +24,7 @@ export class TimelineDialog {
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
         
-        this.setupDialogEventListeners(dialog, overlay, savedColors, callback);
+        this.setupDialogEventListeners(dialog, overlay, savedColors, callback, defaultColor || savedColors[selectedColorIndex]);
     }
 
     getSelectedColorIndex(savedColors, defaultColor) {
@@ -52,6 +52,39 @@ export class TimelineDialog {
                     color: #666;
                     font-size: 0.9em;
                 }
+                .color-picker-grid {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 8px;
+                    margin: 10px 0;
+                    padding: 10px;
+                }
+                .color-box {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    position: relative;
+                    border: 2px solid transparent;
+                    transition: transform 0.2s;
+                }
+                .color-box:hover {
+                    transform: scale(1.1);
+                }
+                .color-box.selected {
+                    border: 2px solid #fff;
+                    box-shadow: 0 0 0 2px #000;
+                }
+                .color-box input[type="color"] {
+                    opacity: 0;
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    left: 0;
+                    top: 0;
+                    cursor: pointer;
+                    display: none;
+                }
             </style>
             <h3>${title}</h3>
             <div class="dialog-form">
@@ -74,14 +107,17 @@ export class TimelineDialog {
                         <span class="wasted-minutes-display"></span>
                     </div>
                 </div>
-                <div class="color-picker-grid">
-                    ${savedColors.map((color, index) => `
-                        <div class="color-box${index === selectedColorIndex ? ' selected' : ''}" 
-                             style="background-color: ${color}" 
-                             data-color="${color}">
-                            <input type="color" value="${color}" />
-                        </div>
-                    `).join('')}
+                <div class="form-group">
+                    <label>事件颜色:</label>
+                    <div class="color-picker-grid">
+                        ${savedColors.map((color, index) => `
+                            <div class="color-box${index === selectedColorIndex ? ' selected' : ''}" 
+                                style="background-color: ${color}" 
+                                data-color="${color}">
+                                <input type="color" value="${color}" />
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
                 <div class="dialog-buttons">
                     <button class="cancel">取消</button>
@@ -91,16 +127,20 @@ export class TimelineDialog {
         `;
     }
 
-    setupDialogEventListeners(dialog, overlay, savedColors, callback) {
+    setupDialogEventListeners(dialog, overlay, savedColors, callback, initialColor) {
         const nameInput = dialog.querySelector('.event-name');
         const startTimeInput = dialog.querySelector('.start-time');
         const endTimeInput = dialog.querySelector('.end-time');
         const wastedTimeInput = dialog.querySelector('.wasted-time');
         const wastedMinutesDisplay = dialog.querySelector('.wasted-minutes-display');
         
-        let selectedColor = savedColors[0];
+        let selectedColor = initialColor;
         
-        this.setupColorPicker(dialog, savedColors, color => selectedColor = color);
+        this.setupColorPicker(dialog, savedColors, (color) => {
+            selectedColor = color;
+            this.setupDialogButtons(dialog, overlay, nameInput, startTimeInput, endTimeInput, wastedTimeInput, color, callback);
+        });
+        
         this.setupWastedTimeCalculation(startTimeInput, endTimeInput, wastedTimeInput, wastedMinutesDisplay);
         this.setupDialogButtons(dialog, overlay, nameInput, startTimeInput, endTimeInput, wastedTimeInput, selectedColor, callback);
     }
@@ -108,14 +148,19 @@ export class TimelineDialog {
     setupColorPicker(dialog, savedColors, onColorSelect) {
         const colorBoxes = dialog.querySelectorAll('.color-box');
         colorBoxes.forEach((box, index) => {
-            box.addEventListener('click', (e) => {
-                if (e.target.classList.contains('color-box')) {
-                    colorBoxes.forEach(b => b.classList.remove('selected'));
-                    box.classList.add('selected');
-                    onColorSelect(box.dataset.color);
-                }
+            const handleColorSelect = () => {
+                colorBoxes.forEach(b => b.classList.remove('selected'));
+                box.classList.add('selected');
+                const color = box.dataset.color;
+                onColorSelect(color);
+            };
+
+            // 点击选择颜色
+            box.addEventListener('click', () => {
+                handleColorSelect();
             });
             
+            // 双击自定义颜色
             box.addEventListener('dblclick', () => {
                 const colorInput = box.querySelector('input[type="color"]');
                 colorInput.style.display = 'block';
@@ -125,13 +170,12 @@ export class TimelineDialog {
                     const newColor = e.target.value;
                     box.style.backgroundColor = newColor;
                     box.dataset.color = newColor;
-                    if (box.classList.contains('selected')) {
-                        onColorSelect(newColor);
-                    }
                     colorInput.style.display = 'none';
                     
                     savedColors[index] = newColor;
                     localStorage.setItem('predefinedColors', JSON.stringify(savedColors));
+                    
+                    handleColorSelect();
                 });
             });
         });

@@ -153,19 +153,23 @@ class EventService {
             const eventStart = timeToDecimal(existingEvent.startTime);
             const eventEnd = timeToDecimal(existingEvent.endTime);
             
-            const conflict = (newStart < eventEnd && newEnd > eventStart);
+            // 只在时间重叠且颜色相同时才报告冲突
+            const timeConflict = (newStart < eventEnd && newEnd > eventStart);
+            const colorConflict = existingEvent.color === event.color;
+            
+            const conflict = timeConflict && colorConflict;
             if (conflict) {
-                console.log('发现时间冲突:', {
-                    new: { start: newStart, end: newEnd },
-                    existing: { start: eventStart, end: eventEnd }
+                console.log('发现时间和颜色冲突:', {
+                    new: { start: newStart, end: newEnd, color: event.color },
+                    existing: { start: eventStart, end: eventEnd, color: existingEvent.color }
                 });
             }
             return conflict;
         });
 
         if (hasConflict) {
-            console.error('时间冲突验证失败');
-            throw new Error('该时间段与现有事件冲突！');
+            console.error('时间和颜色冲突验证失败');
+            throw new Error('该时间段与相同颜色的现有事件冲突！');
         }
 
         // 添加日期字段到事件对象
