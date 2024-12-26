@@ -108,18 +108,33 @@ export class TimelineEvents {
                     wastedTime
                 };
                 
+                // 获取所有事件
+                const allEvents = eventService.getAllEvents();
+                // 找到要编辑的事件的实际索引
+                const actualIndex = allEvents.findIndex(e => 
+                    e.date === event.date && 
+                    e.startTime === event.startTime && 
+                    e.endTime === event.endTime && 
+                    e.name === event.name
+                );
+                
+                if (actualIndex === -1) {
+                    console.error('无法找到要编辑的事件');
+                    this.timeline.dialog.createAlertDialog('无法找到要编辑的事件');
+                    return;
+                }
+
+                // 先删除原事件
+                eventService.deleteEvent(actualIndex);
+
+                // 尝试添加更新后的事件
                 try {
-                    eventService.deleteEvent(index);
                     eventService.addEvent(updatedEvent);
                 } catch (error) {
                     console.error('更新事件失败:', error);
+                    // 如果添加新事件失败，尝试恢复原事件
+                    eventService.addEvent(event);
                     this.timeline.dialog.createAlertDialog(error.message);
-                    try {
-                        eventService.addEvent(event);
-                    } catch (restoreError) {
-                        console.error('恢复原事件失败:', restoreError);
-                        this.timeline.dialog.createAlertDialog('更新失败，且无法恢复原事件，请刷新页面。');
-                    }
                 }
             }
         }, event.name, event.color, wastedTimePercent);

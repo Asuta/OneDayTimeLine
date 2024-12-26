@@ -8,12 +8,9 @@ export class TimelineDialog {
 
     // 获取与指定时间相邻的上一个事件的颜色
     getPreviousEventColor(startTime) {
-        const events = eventService.getAllEvents();
-        const today = new Date();
-        const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        
-        // 过滤出今天的事件
-        const todayEvents = events.filter(event => event.date === date);
+        // 获取选定日期的事件
+        const selectedDate = eventService.getSelectedDate();
+        const todayEvents = eventService.getEventsByDate(selectedDate);
         
         // 按开始时间排序
         todayEvents.sort((a, b) => timeToDecimal(a.startTime) - timeToDecimal(b.startTime));
