@@ -1,3 +1,5 @@
+import { eventService } from '../services/eventService.js';
+
 export class TimelineTheme {
     constructor(timeline) {
         this.timeline = timeline;
@@ -90,6 +92,10 @@ export class TimelineTheme {
         let html = '';
         let dayCount = 1;
         
+        // 获取当前选定的日期
+        const selectedDate = eventService.getSelectedDate();
+        const [selectedYear, selectedMonth, selectedDay] = selectedDate.split('-').map(Number);
+        
         for (let i = 0; i < 6; i++) {
             html += '<div class="calendar-row">';
             for (let j = 0; j < 7; j++) {
@@ -97,8 +103,12 @@ export class TimelineTheme {
                     html += '<div class="calendar-day empty"></div>';
                 } else if (dayCount <= totalDays) {
                     const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCount).padStart(2, '0')}`;
+                    const isSelected = year === selectedYear && 
+                                    (month + 1) === selectedMonth && 
+                                    dayCount === selectedDay;
+                    
                     html += `
-                        <div class="calendar-day" data-date="${date}">
+                        <div class="calendar-day${isSelected ? ' selected' : ''}" data-date="${date}">
                             <span class="day-number">${dayCount}</span>
                         </div>
                     `;
@@ -134,11 +144,18 @@ export class TimelineTheme {
         
         const dayButtons = dialog.querySelectorAll('.calendar-day');
         dayButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const selectedDate = button.getAttribute('data-date');
-                console.log('选择的日期:', selectedDate);
-                // 这里后续添加日期选择的处理逻辑
-            });
+            if (!button.classList.contains('empty')) {
+                button.addEventListener('click', () => {
+                    const selectedDate = button.getAttribute('data-date');
+                    console.log('选择的日期:', selectedDate);
+                    
+                    // 更新选定的日期
+                    eventService.setSelectedDate(selectedDate);
+                    
+                    // 关闭日历对话框
+                    document.body.removeChild(overlay);
+                });
+            }
         });
         
         document.addEventListener('keyup', function handleEsc(e) {

@@ -823,6 +823,30 @@ body.dark-mode {
     color: #007bff;
 }
 
+/* 添加选中日期的样式 */
+.calendar-day.selected {
+    background-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.calendar-day.selected .day-number {
+    color: white;
+}
+
+.calendar-day.selected:hover {
+    background-color: #0056b3;
+}
+
+/* 深色模式下的选中日期样式 */
+.dark-mode .calendar-day.selected {
+    background-color: #3498db;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
+.dark-mode .calendar-day.selected:hover {
+    background-color: #2980b9;
+}
+
 /* 深色模式样式 */
 .dark-mode .date-picker-dialog {
     background-color: #2d2d2d;
@@ -874,4 +898,20 @@ body.dark-mode {
 
 .dark-mode .event {
     background-image: linear-gradient(to top, rgba(69, 69, 69, 0.3) var(--wasted-percent, 0%), transparent var(--wasted-percent, 0%));
+}
+
+.date-header {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dark-mode .date-header {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
 } 

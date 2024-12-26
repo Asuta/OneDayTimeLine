@@ -8,6 +8,7 @@ class EventService {
     constructor() {
         this.events = [];
         this.listeners = new Set();
+        this.selectedDate = this.getCurrentDateString(); // 添加选定日期，默认为当前日期
         
         // 从localStorage获取自定义存储路径，如果没有则使用默认路径
         const storagePath = localStorage.getItem('storagePath');
@@ -31,6 +32,24 @@ class EventService {
         ipcRenderer.on('export-data', (event, filePath) => {
             this.exportData(filePath);
         });
+    }
+    
+    // 获取当前日期字符串
+    getCurrentDateString() {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+    
+    // 设置选定日期
+    setSelectedDate(date) {
+        this.selectedDate = date;
+        console.log('设置选定日期:', date);
+        this._notifyListeners();
+    }
+    
+    // 获取选定日期
+    getSelectedDate() {
+        return this.selectedDate;
     }
     
     // 设置新的存储路径
@@ -132,19 +151,14 @@ class EventService {
             throw new Error('结束时间必须晚于开始时间！');
         }
 
-        // 获取当前日期
-        const today = new Date();
-        const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        // 使用选定的日期
+        const date = this.selectedDate;
         
         // 检查时间冲突
-        const hasConflict = this.events.some((existingEvent, index) => {
+        const todayEvents = this.getEventsByDate(date);
+        const hasConflict = todayEvents.some((existingEvent, index) => {
             // 如果是被排除的索引，跳过冲突检查
             if (index === excludeIndex) {
-                return false;
-            }
-            
-            // 只检查同一天的事件
-            if (existingEvent.date !== date) {
                 return false;
             }
             

@@ -12,7 +12,16 @@ export class EventList {
 
     render() {
         this.container.innerHTML = '';
-        const events = eventService.getAllEvents();
+        
+        // 获取选定日期的事件
+        const selectedDate = eventService.getSelectedDate();
+        const events = eventService.getEventsByDate(selectedDate);
+        
+        // 添加日期显示
+        const dateHeader = document.createElement('div');
+        dateHeader.className = 'date-header';
+        dateHeader.textContent = `${selectedDate} 的事件`;
+        this.container.appendChild(dateHeader);
         
         events.forEach((event, index) => {
             const eventItem = document.createElement('div');

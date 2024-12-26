@@ -9,7 +9,10 @@ export class TimelineEvents {
 
     renderEvents() {
         this.timeline.eventsContainer.innerHTML = '';
-        const events = eventService.getAllEvents();
+        
+        // 获取选定日期的事件
+        const selectedDate = eventService.getSelectedDate();
+        const events = eventService.getEventsByDate(selectedDate);
         
         events.forEach((event, index) => {
             const eventElement = document.createElement('div');

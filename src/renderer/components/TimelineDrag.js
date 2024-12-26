@@ -52,7 +52,9 @@ export class TimelineDrag {
         const relativePosition = (e.clientY - timelineRect.top) / timelineRect.height;
         const currentTime = relativePosition * 24;
         
-        const events = eventService.getAllEvents();
+        // 获取当前选定日期的事件
+        const selectedDate = eventService.getSelectedDate();
+        const events = eventService.getEventsByDate(selectedDate);
         
         let startTime = Math.min(this.dragStartTime, currentTime);
         let endTime = Math.max(this.dragStartTime, currentTime);
@@ -78,7 +80,7 @@ export class TimelineDrag {
                 }
             }
         });
-        
+
         const startPercent = (startTime / 24) * 100;
         const heightPercent = ((endTime - startTime) / 24) * 100;
         
