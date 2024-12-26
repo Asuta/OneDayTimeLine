@@ -1,8 +1,37 @@
 import { timeToDecimal } from '../utils/timeUtils.js';
+import { eventService } from '../services/eventService.js';
 
 export class TimelineDialog {
     constructor(timeline) {
         this.timeline = timeline;
+    }
+
+    // 获取与指定时间相邻的上一个事件的颜色
+    getPreviousEventColor(startTime) {
+        const events = eventService.getAllEvents();
+        const today = new Date();
+        const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        
+        // 过滤出今天的事件
+        const todayEvents = events.filter(event => event.date === date);
+        
+        // 按开始时间排序
+        todayEvents.sort((a, b) => timeToDecimal(a.startTime) - timeToDecimal(b.startTime));
+        
+        // 找到紧邻的上一个事件
+        const startTimeDecimal = timeToDecimal(startTime);
+        const previousEvent = todayEvents.reverse().find(event => timeToDecimal(event.startTime) < startTimeDecimal);
+        
+        return previousEvent ? previousEvent.color : null;
+    }
+
+    // 从预定义颜色中获取一个不同的颜色
+    getDifferentColor(savedColors, previousColor) {
+        if (!previousColor) return savedColors[0];
+        
+        // 找到第一个与上一个事件颜色不同的颜色
+        const differentColor = savedColors.find(color => color !== previousColor);
+        return differentColor || savedColors[0];
     }
 
     createDialog(title, initialStartTime, initialEndTime, callback, defaultName = '', defaultColor = null, defaultWastedTime = 0) {
@@ -16,6 +45,14 @@ export class TimelineDialog {
             '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
             '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB'
         ];
+
+        // 获取上一个事件的颜色
+        const previousEventColor = this.getPreviousEventColor(initialStartTime);
+        
+        // 如果没有指定默认颜色，则选择一个与上一个事件不同的颜色
+        if (!defaultColor) {
+            defaultColor = this.getDifferentColor(savedColors, previousEventColor);
+        }
 
         let selectedColorIndex = this.getSelectedColorIndex(savedColors, defaultColor);
         
