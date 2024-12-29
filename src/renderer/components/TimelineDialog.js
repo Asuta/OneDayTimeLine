@@ -170,13 +170,48 @@ export class TimelineDialog {
         
         let selectedColor = initialColor;
         
+        // 设置颜色选择器，但不重新绑定按钮事件
         this.setupColorPicker(dialog, savedColors, (color) => {
             selectedColor = color;
-            this.setupDialogButtons(dialog, overlay, nameInput, startTimeInput, endTimeInput, wastedTimeInput, color, callback);
         });
         
         this.setupWastedTimeCalculation(startTimeInput, endTimeInput, wastedTimeInput, wastedMinutesDisplay);
-        this.setupDialogButtons(dialog, overlay, nameInput, startTimeInput, endTimeInput, wastedTimeInput, selectedColor, callback);
+        
+        // 只绑定一次按钮事件
+        const confirmButton = dialog.querySelector('.confirm');
+        const cancelButton = dialog.querySelector('.cancel');
+        
+        const handleConfirm = () => {
+            const name = nameInput.value.trim();
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+            const wastedTime = parseInt(wastedTimeInput.value) || 0;
+            
+            if (name && startTime && endTime) {
+                const startTimeDecimal = timeToDecimal(startTime);
+                const endTimeDecimal = timeToDecimal(endTime);
+                const totalMinutes = (endTimeDecimal - startTimeDecimal) * 60;
+                const actualWastedMinutes = Math.round((wastedTime / 100) * totalMinutes);
+                
+                callback(name, selectedColor, startTime, endTime, actualWastedMinutes);
+                document.body.removeChild(overlay);
+            } else {
+                if (!name) nameInput.focus();
+            }
+        };
+        
+        const handleCancel = () => {
+            document.body.removeChild(overlay);
+        };
+        
+        confirmButton.addEventListener('click', handleConfirm);
+        cancelButton.addEventListener('click', handleCancel);
+        
+        // 添加键盘事件监听
+        dialog.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') handleConfirm();
+            if (e.key === 'Escape') handleCancel();
+        });
     }
 
     setupColorPicker(dialog, savedColors, onColorSelect) {
@@ -229,51 +264,6 @@ export class TimelineDialog {
         startTimeInput.addEventListener('change', updateWastedMinutes);
         endTimeInput.addEventListener('change', updateWastedMinutes);
         updateWastedMinutes();
-    }
-
-    setupDialogButtons(dialog, overlay, nameInput, startTimeInput, endTimeInput, wastedTimeInput, selectedColor, callback) {
-        const handleConfirm = () => {
-            const name = nameInput.value.trim();
-            const startTime = startTimeInput.value;
-            const endTime = endTimeInput.value;
-            const wastedTime = parseInt(wastedTimeInput.value) || 0;
-            
-            if (name && startTime && endTime) {
-                const startTimeDecimal = timeToDecimal(startTime);
-                const endTimeDecimal = timeToDecimal(endTime);
-                const totalMinutes = (endTimeDecimal - startTimeDecimal) * 60;
-                const actualWastedMinutes = Math.round((wastedTime / 100) * totalMinutes);
-                
-                callback(name, selectedColor, startTime, endTime, actualWastedMinutes);
-                document.body.removeChild(overlay);
-            } else {
-                if (!name) nameInput.focus();
-                else if (!startTime) startTimeInput.focus();
-                else if (!endTime) endTimeInput.focus();
-            }
-        };
-        
-        const handleCancel = () => {
-            document.body.removeChild(overlay);
-            if (callback) callback(null);
-        };
-        
-        dialog.querySelector('.confirm').addEventListener('click', handleConfirm);
-        dialog.querySelector('.cancel').addEventListener('click', handleCancel);
-        
-        dialog.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.isComposing) {
-                e.preventDefault();
-                handleConfirm();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                handleCancel();
-            }
-        });
-        
-        dialog.addEventListener('keyup', e => e.stopPropagation());
-        
-        setTimeout(() => nameInput.focus(), 0);
     }
 
     createConfirmDialog(message, onConfirm) {
