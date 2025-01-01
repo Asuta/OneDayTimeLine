@@ -181,6 +181,9 @@ export class TimelineDialog {
         const confirmButton = dialog.querySelector('.confirm');
         const cancelButton = dialog.querySelector('.cancel');
         
+        // 对话框创建后立即聚焦到事件名称输入框
+        nameInput.focus();
+
         const handleConfirm = () => {
             const name = nameInput.value.trim();
             const startTime = startTimeInput.value;
@@ -342,4 +345,4 @@ export class TimelineDialog {
             dialog.querySelector('.confirm').focus();
         }, 0);
     }
-} 
+}
