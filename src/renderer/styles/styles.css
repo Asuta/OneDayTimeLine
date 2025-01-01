@@ -790,16 +790,16 @@ body.dark-mode {
 }
 
 .calendar-day {
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border-radius: 4px;
-    position: relative;
+    border-radius: 50%;
     background-color: #f8f9fa;
     transition: all 0.2s ease;
-    height: 38px;
-    width: 38px;
+    position: relative;
 }
 
 .calendar-day:not(.empty):hover {
@@ -814,23 +814,28 @@ body.dark-mode {
 .calendar-day .day-number {
     font-size: 14px;
     color: #333;
-    line-height: 38px;
-    text-align: center;
     width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .calendar-day:not(.empty):hover .day-number {
     color: #007bff;
 }
 
-/* 添加选中日期的样式 */
+/* 选中日期的样式 */
 .calendar-day.selected {
     background-color: #007bff;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.4);
+    transform: scale(1.1);
+    z-index: 1;
 }
 
 .calendar-day.selected .day-number {
     color: white;
+    font-weight: 500;
 }
 
 .calendar-day.selected:hover {
@@ -840,48 +845,40 @@ body.dark-mode {
 /* 深色模式下的选中日期样式 */
 .dark-mode .calendar-day.selected {
     background-color: #3498db;
-    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
 }
 
 .dark-mode .calendar-day.selected:hover {
     background-color: #2980b9;
 }
 
-/* 深色模式样式 */
-.dark-mode .date-picker-dialog {
-    background-color: #2d2d2d;
+/* 调整日历网格的间距 */
+.calendar-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 0 5px;
 }
 
-.dark-mode .month-selector button {
-    color: #3498db;
+.weekday-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    text-align: center;
+    font-weight: 500;
+    margin-bottom: 12px;
+    padding: 0 5px;
 }
 
-.dark-mode .month-selector button:hover {
-    background-color: rgba(52, 152, 219, 0.1);
-}
-
-.dark-mode .current-month {
-    color: #e0e0e0;
-}
-
-.dark-mode .weekday-header div {
-    color: #999;
-}
-
-.dark-mode .calendar-day {
-    background-color: #383838;
-}
-
-.dark-mode .calendar-day:not(.empty):hover {
-    background-color: #454545;
-}
-
-.dark-mode .calendar-day .day-number {
-    color: #e0e0e0;
-}
-
-.dark-mode .calendar-day:not(.empty):hover .day-number {
-    color: #3498db;
+.weekday-header div {
+    color: #666;
+    font-size: 14px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 添加浪费时间显示样式 */

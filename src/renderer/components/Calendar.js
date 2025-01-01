@@ -8,6 +8,12 @@ export class Calendar {
     }
 
     initialize() {
+        // 确保在初始化时就显示正确的选中状态
+        const selectedDate = eventService.getSelectedDate();
+        const [year, month] = selectedDate.split('-').map(Number);
+        this.currentDate.setFullYear(year);
+        this.currentDate.setMonth(month - 1);
+        
         this.updateCalendar();
         this.setupEventListeners();
     }
@@ -89,13 +95,12 @@ export class Calendar {
             const dayElement = e.target.closest('.calendar-day');
             if (dayElement && !dayElement.classList.contains('empty')) {
                 const selectedDate = dayElement.getAttribute('data-date');
+                
+                // 先更新服务中的选中日期
                 eventService.setSelectedDate(selectedDate);
                 
-                // 更新选中状态
-                this.container.querySelectorAll('.calendar-day').forEach(day => {
-                    day.classList.remove('selected');
-                });
-                dayElement.classList.add('selected');
+                // 然后重新生成日历以显示正确的选中状态
+                this.updateCalendar();
             }
         });
 
