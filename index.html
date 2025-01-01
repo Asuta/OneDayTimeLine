@@ -7,27 +7,29 @@
 </head>
 <body>
     <div class="container">
-        <div class="control-panel">
-            <h2>添加新事件</h2>
-            <form id="eventForm">
-                <div class="form-group">
-                    <label>开始时间:</label>
-                    <input type="time" id="startTime" required>
+        <div class="calendar-panel">
+            <h2>日历</h2>
+            <div class="calendar-container">
+                <div class="month-selector">
+                    <button class="prev-month">◀</button>
+                    <div class="current-month"></div>
+                    <button class="next-month">▶</button>
                 </div>
-                <div class="form-group">
-                    <label>结束时间:</label>
-                    <input type="time" id="endTime" required>
+                <div class="calendar-grid">
+                    <div class="weekday-header">
+                        <div>日</div>
+                        <div>一</div>
+                        <div>二</div>
+                        <div>三</div>
+                        <div>四</div>
+                        <div>五</div>
+                        <div>六</div>
+                    </div>
+                    <div class="days-grid">
+                        <!-- 日历内容将通过JS动态生成 -->
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>事件名称:</label>
-                    <input type="text" id="eventName" required>
-                </div>
-                <div class="form-group">
-                    <label>事件颜色:</label>
-                    <input type="color" id="eventColor" required>
-                </div>
-                <button type="submit">添加事件</button>
-            </form>
+            </div>
         </div>
         
         <div class="timeline-container">
