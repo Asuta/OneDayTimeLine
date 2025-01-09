@@ -110,9 +110,9 @@ class EventService {
                 }
             });
             
-            // 更新事件列表
+            // 更新事件列表，但不保存文件
             this.events = importedEvents;
-            this._notifyListeners();
+            this._notifyListeners(true);  // 传入true表示跳过保存
             console.log('数据导入成功');
         } catch (error) {
             console.error('导入数据失败:', error);
@@ -272,7 +272,7 @@ class EventService {
     }
 
     // 通知所有监听器
-    _notifyListeners() {
+    _notifyListeners(skipSave = false) {
         console.log('通知监听器');
         this.listeners.forEach(listener => {
             try {
@@ -281,7 +281,9 @@ class EventService {
                 console.error('监听器执行失败:', error);
             }
         });
-        this.saveEvents();
+        if (!skipSave) {
+            this.saveEvents();
+        }
     }
 
     // 清空所有事件
