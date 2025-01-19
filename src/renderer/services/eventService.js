@@ -44,7 +44,7 @@ class EventService {
     setSelectedDate(date) {
         this.selectedDate = date;
         console.log('设置选定日期:', date);
-        this._notifyListeners();
+        this._notifyListeners(true);  // 添加true参数，跳过文件保存
     }
     
     // 获取选定日期
