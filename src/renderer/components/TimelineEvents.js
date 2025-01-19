@@ -125,15 +125,19 @@ export class TimelineEvents {
                 }
 
                 // 先删除原事件
-                eventService.deleteEvent(actualIndex);
+                eventService.deleteEvent(index);
 
-                // 尝试添加更新后的事件
+                // 尝试添加更新后的事件，传入排除索引
                 try {
-                    eventService.addEvent(updatedEvent);
+                    eventService.addEvent(updatedEvent, index);
                 } catch (error) {
                     console.error('更新事件失败:', error);
-                    // 如果添加新事件失败，尝试恢复原事件
-                    eventService.addEvent(event);
+                    // 如果添加新事件失败，恢复原事件
+                    try {
+                        eventService.addEvent(event);
+                    } catch (restoreError) {
+                        console.error('恢复原事件失败:', restoreError);
+                    }
                     this.timeline.dialog.createAlertDialog(error.message);
                 }
             }

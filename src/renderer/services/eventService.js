@@ -133,7 +133,7 @@ class EventService {
 
     // 添加事件
     addEvent(event, excludeIndex = -1) {
-        console.log('尝试添加事件:', event);
+        console.log('尝试添加事件:', event, '排除索引:', excludeIndex);
         
         // 验证时间
         const startDecimal = timeToDecimal(event.startTime);
@@ -159,6 +159,7 @@ class EventService {
         const hasConflict = todayEvents.some((existingEvent, index) => {
             // 如果是被排除的索引，跳过冲突检查
             if (index === excludeIndex) {
+                console.log('跳过排除索引的事件:', index);
                 return false;
             }
             
