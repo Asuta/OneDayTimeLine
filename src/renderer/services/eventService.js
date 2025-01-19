@@ -202,15 +202,40 @@ class EventService {
         });
         
         console.log('事件添加成功，当前事件列表:', this.events);
-        this._notifyListeners();
+        this._notifyListeners(false);  // 明确指定false，表示需要保存文件
     }
 
     // 删除事件
     deleteEvent(index) {
         console.log('删除事件:', index);
-        this.events.splice(index, 1);
+        // 获取当前选中日期的事件
+        const selectedDate = this.getSelectedDate();
+        const todayEvents = this.getEventsByDate(selectedDate);
+        const eventToDelete = todayEvents[index];
+        
+        if (!eventToDelete) {
+            console.error('未找到要删除的事件');
+            return;
+        }
+        
+        // 在所有事件中找到对应事件的索引
+        const globalIndex = this.events.findIndex(event => 
+            event.date === eventToDelete.date &&
+            event.startTime === eventToDelete.startTime &&
+            event.endTime === eventToDelete.endTime &&
+            event.name === eventToDelete.name &&
+            event.color === eventToDelete.color
+        );
+        
+        if (globalIndex === -1) {
+            console.error('在全局事件列表中未找到要删除的事件');
+            return;
+        }
+        
+        // 删除事件
+        this.events.splice(globalIndex, 1);
         console.log('删除后的事件列表:', this.events);
-        this._notifyListeners();
+        this._notifyListeners(false);  // 明确指定false，表示需要保存文件
     }
 
     // 获取所有事件
@@ -290,7 +315,7 @@ class EventService {
     clearAllEvents() {
         this.events = [];
         console.log('清空所有事件');
-        this._notifyListeners();
+        this._notifyListeners(false);  // 明确指定false，表示需要保存文件
     }
 }
 
